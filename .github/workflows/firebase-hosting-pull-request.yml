@@ -18,7 +18,11 @@ jobs:
 
       - name: Build Flutter Web
         run: flutter build web --release
-        
+
+      - name: Prepare Public Directory
+        run: |
+          cp -r build/web/* public/
+
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
