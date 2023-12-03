@@ -19,6 +19,9 @@ jobs:
         with:
           channel: stable
 
+      - name: Clean previous build
+        run: flutter clean
+        
       - name: Build Flutter Web
         run: flutter build web --release
 
