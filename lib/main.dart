@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:manage_learning/login_screen.dart';
 import 'dart:convert';
-import 'package:flutter/services.dart' show rootBundle;
+import 'package:http/http.dart' as http;
 
 void main() async {
   initializeFirebase();
@@ -12,10 +12,17 @@ void main() async {
 
 Future<Map<String, dynamic>> loadConfig() async {
   try {
-    final configString = await rootBundle.loadString('config.json');
-    return json.decode(configString) as Map<String, dynamic>;
-    // ignore: empty_catches
-  } catch (e) {}
+    final response = await http.get(Uri.parse('config.json'));
+    if (response.statusCode == 200) {
+      return json.decode(response.body) as Map<String, dynamic>;
+    } else {
+      // Handle the case when the file is not found or other server errors
+      print('Failed to load config.json: ${response.statusCode}');
+    }
+  } catch (e) {
+    // Handle any other types of errors (e.g., parsing errors)
+    print('An error occurred while loading config.json: $e');
+  }
   return {};
 }
 
