@@ -1,13 +1,17 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:manage_learning/login_screen.dart';
+import 'package:manage_learning/data/firebase_service.dart';
+import 'package:manage_learning/ui/add_cards_page.dart';
+import 'package:manage_learning/ui/decks_page.dart';
+import 'package:manage_learning/ui/login_screen.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 
 void main() async {
   initializeFirebase();
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 Future<Map<String, dynamic>> loadConfig() async {
@@ -50,10 +54,33 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Welcome to John Louis academy',
-      home: LoginScreen(),
+    return MultiProvider(
+      providers: [
+        Provider<FirebaseService>(
+          create: (_) => FirebaseService(),
+        ),
+      ],
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'Welcome to John Louis academy',
+        initialRoute: '/',
+          onGenerateRoute: (settings) {
+            return PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) {
+                if (settings.name == '/') {
+                  return const LoginScreen();
+                } else if (settings.name == '/decks') {
+                  return const DecksPage();
+                }  else if (settings.name == '/addcards') {
+                  return AddCardsPage(deckId: settings.arguments as String);
+                }
+                return Container();
+              },
+              transitionDuration: Duration.zero,
+              reverseTransitionDuration: Duration.zero
+            );
+          },
+        ),
     );
   }
 }

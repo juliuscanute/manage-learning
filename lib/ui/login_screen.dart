@@ -1,9 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:manage_learning/page_route_animation.dart';
-import 'package:manage_learning/welcome_screen.dart';
 
 class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }
@@ -51,13 +51,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   ElevatedButton(
                     onPressed: isLoading ? null : () => _login(context),
                     style: ElevatedButton.styleFrom(
-                      minimumSize: Size(200,
+                      minimumSize: const Size(200,
                           50), // Set a nice width and height for the button
-                      padding: EdgeInsets.symmetric(
+                      padding: const EdgeInsets.symmetric(
                           horizontal: 20, vertical: 10), // Adjust padding
                     ),
                     child: isLoading
-                        ? SizedBox(
+                        ? const SizedBox(
                             height: 24.0, // Smaller than the button's height
                             width: 24.0, // Smaller than the button's width
                             child: CircularProgressIndicator(
@@ -91,9 +91,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       // On successful login
       if (mounted) {
-        Navigator.of(context).pushReplacement(
-          NoAnimationPageRoute(page: const WelcomeScreen()),
-        );
+        Navigator.of(context).pushReplacementNamed('/decks');
       }
     } catch (e) {
       if (mounted) {
