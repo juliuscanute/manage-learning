@@ -18,45 +18,8 @@ class _DecksPageWidgetState extends State<DecksPage> {
     _firebaseService = Provider.of<FirebaseService>(context, listen: false);
   }
 
-  Future<void> _showAddDeckDialog(BuildContext context) async {
-    TextEditingController titleController = TextEditingController();
-
-    return showDialog<void>(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: const Text('Add New Deck'),
-          content: TextField(
-            controller: titleController,
-            decoration: const InputDecoration(hintText: 'Deck Title'),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Cancel'),
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-              },
-            ),
-            TextButton(
-              child: const Text('Add'),
-              onPressed: () async {
-                // if (titleController.text.isNotEmpty) {
-                  String deckId =
-                      await _firebaseService.createDeck(titleController.text);
-                  print('New deck ID: $deckId');
-                  // Navigate to AddCardsPage with the new deckId
-                  var currentContext = context;
-                  Future.delayed(Duration.zero, () {
-                    Navigator.of(currentContext).pop();
-                    Navigator.pushReplacementNamed(currentContext, '/addcards', arguments: deckId);
-                  });
-                // }
-              },
-            ),
-          ],
-        );
-      },
-    );
+  void _showAddCards() {
+    Navigator.of(context).pushNamed('/addcards');
   }
 
   @override
@@ -77,41 +40,50 @@ class _DecksPageWidgetState extends State<DecksPage> {
           var decks = snapshot.data ?? [];
           if (decks.isEmpty) {
             return const Center(
-                child: Text(
-                    "No decks available. Tap the '+' button to add a new deck."));
+              child: Text("No decks available. Tap the '+' button to add a new deck."),
+            );
           }
 
-          return ListView.builder(
-            itemCount: decks.length,
-            itemBuilder: (context, index) {
-              var deck = decks[index];
-              return ListTile(
-                title: Text(deck['title']),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit),
-                      onPressed: () {
-                        // Navigate to edit deck title page
+          return Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: 600), // Max width of the cards
+              child: ListView.builder(
+                itemCount: decks.length,
+                itemBuilder: (context, index) {
+                  var deck = decks[index];
+                  return Card(
+                    elevation: 4,
+                    margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                    child: ListTile(
+                      title: Text(deck['title'], style: Theme.of(context).textTheme.titleLarge),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.edit),
+                            onPressed: () {
+                              Navigator.of(context).pushNamed('/editcards', arguments: deck['id']); 
+                            },
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete),
+                            onPressed: () => _firebaseService.deleteDeck(deck['id']),
+                          ),
+                        ],
+                      ),
+                      onTap: () {
+                        // Navigate to cards page for this deck
                       },
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.delete),
-                      onPressed: () => _firebaseService.deleteDeck(deck['id']),
-                    ),
-                  ],
-                ),
-                onTap: () {
-                  // Navigate to cards page for this deck
+                  );
                 },
-              );
-            },
+              ),
+            ),
           );
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddDeckDialog(context),
+        onPressed: _showAddCards,
         tooltip: 'Add Deck',
         child: const Icon(Icons.add),
       ),

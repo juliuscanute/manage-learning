@@ -4,6 +4,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:manage_learning/data/firebase_service.dart';
 import 'package:manage_learning/ui/add_cards_page.dart';
 import 'package:manage_learning/ui/decks_page.dart';
+import 'package:manage_learning/ui/edit_cards_page.dart';
 import 'package:manage_learning/ui/login_screen.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -70,9 +71,11 @@ class MyApp extends StatelessWidget {
                 if (settings.name == '/') {
                   return const LoginScreen();
                 } else if (settings.name == '/decks') {
-                  return const DecksPage();
+                  return  const DecksPage();
                 }  else if (settings.name == '/addcards') {
-                  return AddCardsPage(deckId: settings.arguments as String);
+                  return AddCardsPage();
+                } else if (settings.name == '/editcards') {
+                  return EditCardsPage(deckId: settings.arguments as String);
                 }
                 return Container();
               },
