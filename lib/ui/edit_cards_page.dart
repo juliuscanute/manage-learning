@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 
 class EditCardsPage extends StatefulWidget {
   final String deckId;
-  const EditCardsPage({required this.deckId, super.key});
+  const EditCardsPage({required this.deckId, Key? key}) : super(key: key);
 
   @override
   _EditCardsPageState createState() => _EditCardsPageState();
@@ -13,7 +13,7 @@ class EditCardsPage extends StatefulWidget {
 class _EditCardsPageState extends State<EditCardsPage> {
   late FirebaseService _firebaseService;
   final TextEditingController _deckTitleController = TextEditingController();
-  late List<Map<String, TextEditingController>> _cardControllers = [];
+  late List<Map<String, dynamic>> _cardControllers = []; // Include positioning
   bool _isLoading = true;
 
   @override
@@ -23,58 +23,69 @@ class _EditCardsPageState extends State<EditCardsPage> {
     _loadDeckData();
   }
 
-void _loadDeckData() async {
-  setState(() => _isLoading = true);
-  var deckData = await _firebaseService.getDeckData(widget.deckId);
-  _deckTitleController.text = deckData['title'];
+  void _loadDeckData() async {
+    setState(() => _isLoading = true);
+    var deckData = await _firebaseService.getDeckData(widget.deckId);
+    _deckTitleController.text = deckData['title'];
 
-  var fetchedCards = deckData['cards'] as List<Map<String, dynamic>>;
-  _cardControllers = fetchedCards.map((cardData) {
-    return {
-      'front': TextEditingController(text: cardData['front'] as String),
-      'back': TextEditingController(text: cardData['back'] as String),
-    };
-  }).toList();
+    // Adjusted to handle positioning
+    var fetchedCards = deckData['cards'] as List<Map<String, dynamic>>;
+    _cardControllers = fetchedCards
+        .map((cardData) => {
+              'front': TextEditingController(text: cardData['front']),
+              'back': TextEditingController(text: cardData['back']),
+              'position': cardData['position'], // Store position
+            })
+        .toList()
+      ..sort((a, b) => (a['position'] as int)
+          .compareTo(b['position'] as int)); // Sort by position
 
-  setState(() => _isLoading = false);
-}
+    setState(() => _isLoading = false);
+  }
 
+  void _moveCard(int oldIndex, int newIndex) {
+    setState(() {
+      final item = _cardControllers.removeAt(oldIndex);
+      _cardControllers.insert(newIndex, item);
+      // After moving, update positions to reflect current order
+      for (int i = 0; i < _cardControllers.length; i++) {
+        _cardControllers[i]['position'] = i;
+      }
+    });
+  }
 
+  Future<void> _saveDeckAndCards() async {
+    await _firebaseService.updateDeck(
+      widget.deckId,
+      _deckTitleController.text,
+      _cardControllers.map((controllers) {
+        return {
+          'front': controllers['front'].text,
+          'back': controllers['back'].text,
+          'position': controllers['position'], // Save with updated position
+        };
+      }).toList(),
+    );
+    Navigator.pop(context);
+  }
 
   void _addCardController() {
     setState(() {
       _cardControllers.add({
         'front': TextEditingController(),
         'back': TextEditingController(),
+        'position': _cardControllers.length, // Assign next position
       });
-    });
-  }
-
-  Future<void> _saveDeckAndCards() async {
-    // Update the deck and its cards
-    await _firebaseService.updateDeck(
-      widget.deckId,
-      _deckTitleController.text,
-      _cardControllers.map((controllers) {
-        return {
-          'front': controllers['front']!.text,
-          'back': controllers['back']!.text,
-        };
-      }).toList(),
-    );
-    var currentContext = context;
-    Future.delayed(Duration.zero, () {
-      Navigator.pop(currentContext);
     });
   }
 
   @override
   void dispose() {
     _deckTitleController.dispose();
-    for (var controllers in _cardControllers) {
-      controllers['front']!.dispose();
-      controllers['back']!.dispose();
-    }
+    _cardControllers.forEach((controllers) {
+      controllers['front'].dispose();
+      controllers['back'].dispose();
+    });
     super.dispose();
   }
 
@@ -86,13 +97,14 @@ void _loadDeckData() async {
           ? const Center(child: CircularProgressIndicator())
           : Center(
               child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: 600), // Max width of the content
+                constraints: BoxConstraints(maxWidth: 600),
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text('Deck Title', style: Theme.of(context).textTheme.headline6),
+                      Text('Deck Title',
+                          style: Theme.of(context).textTheme.headline6),
                       SizedBox(height: 8),
                       TextField(
                         controller: _deckTitleController,
@@ -102,16 +114,19 @@ void _loadDeckData() async {
                         ),
                       ),
                       SizedBox(height: 16),
-                      Text('Cards', style: Theme.of(context).textTheme.headline6),
-                      for (var i = 0; i < _cardControllers.length; i++)
-                        Card(
+                      Text('Cards',
+                          style: Theme.of(context).textTheme.headline6),
+                      ..._cardControllers.asMap().entries.map((entry) {
+                        int i = entry.key;
+                        Map<String, dynamic> controller = entry.value;
+                        return Card(
                           margin: const EdgeInsets.symmetric(vertical: 8),
                           child: Padding(
                             padding: const EdgeInsets.all(8.0),
                             child: Column(
                               children: [
                                 TextField(
-                                  controller: _cardControllers[i]['front']!,
+                                  controller: controller['front'],
                                   decoration: InputDecoration(
                                     labelText: 'Front ${i + 1}',
                                     border: OutlineInputBorder(),
@@ -119,16 +134,35 @@ void _loadDeckData() async {
                                 ),
                                 SizedBox(height: 8),
                                 TextField(
-                                  controller: _cardControllers[i]['back']!,
+                                  controller: controller['back'],
                                   decoration: InputDecoration(
                                     labelText: 'Back ${i + 1}',
                                     border: OutlineInputBorder(),
                                   ),
                                 ),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    IconButton(
+                                      icon: Icon(Icons.arrow_upward),
+                                      onPressed: i > 0
+                                          ? () => _moveCard(i, i - 1)
+                                          : null,
+                                    ),
+                                    IconButton(
+                                      icon: Icon(Icons.arrow_downward),
+                                      onPressed: i < _cardControllers.length - 1
+                                          ? () => _moveCard(i, i + 1)
+                                          : null,
+                                    ),
+                                  ],
+                                ),
                               ],
                             ),
                           ),
-                        ),
+                        );
+                      }).toList(),
                       ElevatedButton(
                         onPressed: _addCardController,
                         child: const Text('Add Another Card'),
@@ -137,8 +171,8 @@ void _loadDeckData() async {
                       ElevatedButton(
                         onPressed: _saveDeckAndCards,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green, // Button color
-                          foregroundColor: Colors.white, // Text color
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
                         ),
                         child: const Text('Save Deck and Cards'),
                       ),

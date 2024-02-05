@@ -28,27 +28,47 @@ class _AddCardsPageState extends State<AddCardsPage> {
     });
   }
 
-  Future<void> _saveDeckAndCards() async {
-    var deckId = await _firebaseService.createDeck(_deckTitleController.text);
-    for (var controllers in _cardControllers) {
-      await _firebaseService.addCard(
-        deckId,
-        controllers['front']!.text,
-        controllers['back']!.text,
-      );
+  void _moveCardUp(int index) {
+    if (index > 0) {
+      setState(() {
+        final item = _cardControllers.removeAt(index);
+        _cardControllers.insert(index - 1, item);
+      });
     }
-    var currentContext = context;
-    Future.delayed(Duration.zero, () {
-      Navigator.of(currentContext).pop();
-    });
   }
+
+  void _moveCardDown(int index) {
+    if (index < _cardControllers.length - 1) {
+      setState(() {
+        final item = _cardControllers.removeAt(index);
+        _cardControllers.insert(index + 1, item);
+      });
+    }
+  }
+
+Future<void> _saveDeckAndCards() async {
+  var deckId = await _firebaseService.createDeck(_deckTitleController.text);
+  for (var i = 0; i < _cardControllers.length; i++) {
+    var controllers = _cardControllers[i];
+    await _firebaseService.addCard(
+      deckId,
+      controllers['front']!.text,
+      controllers['back']!.text,
+      i, // Pass the index as the card's position
+    );
+  }
+  var currentContext = context;
+  Future.delayed(Duration.zero, () {
+    Navigator.of(currentContext).pop();
+  });
+}
 
   @override
   void dispose() {
     _deckTitleController.dispose();
-    for (var controllers in _cardControllers) {
-      controllers['front']!.dispose();
-      controllers['back']!.dispose();
+    for (var controller in _cardControllers) {
+      controller['front']!.dispose();
+      controller['back']!.dispose();
     }
     super.dispose();
   }
@@ -59,67 +79,120 @@ class _AddCardsPageState extends State<AddCardsPage> {
       appBar: AppBar(title: const Text('Add New Deck and Cards')),
       body: Center(
         child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: 600), // Max width of the content
+          constraints: BoxConstraints(maxWidth: 600),
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text('Deck Title', style: Theme.of(context).textTheme.headline6),
-                SizedBox(height: 8),
-                TextField(
-                  controller: _deckTitleController,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    hintText: 'Enter deck title',
-                  ),
-                ),
-                SizedBox(height: 16),
-                Text('Cards', style: Theme.of(context).textTheme.headline6),
-                for (var i = 0; i < _cardControllers.length; i++)
-                  Card(
-                    margin: const EdgeInsets.symmetric(vertical: 8),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        children: [
-                          TextField(
-                            controller: _cardControllers[i]['front']!,
-                            decoration: InputDecoration(
-                              labelText: 'Front ${i + 1}',
-                              border: OutlineInputBorder(),
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          TextField(
-                            controller: _cardControllers[i]['back']!,
-                            decoration: InputDecoration(
-                              labelText: 'Back ${i + 1}',
-                              border: OutlineInputBorder(),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ElevatedButton(
-                  onPressed: _addCardController,
-                  child: const Text('Add Another Card'),
-                ),
-                SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: _saveDeckAndCards,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green, // Button color
-                    foregroundColor: Colors.white, // Text color
-                  ),
-                  child: const Text('Save Deck and Cards'),
-                ),
+                _buildDeckTitleInput(),
+                _buildCardsList(),
+                _buildAddCardButton(),
+                _buildSaveDeckButton(),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildDeckTitleInput() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Deck Title', style: Theme.of(context).textTheme.headline6),
+        SizedBox(height: 8),
+        TextField(
+          controller: _deckTitleController,
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+            hintText: 'Enter deck title',
+          ),
+        ),
+        SizedBox(height: 16),
+      ],
+    );
+  }
+
+  Widget _buildCardsList() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Cards', style: Theme.of(context).textTheme.headline6),
+        for (int i = 0; i < _cardControllers.length; i++)
+          _buildCardItem(i),
+      ],
+    );
+  }
+
+  Widget _buildCardItem(int index) {
+    return AnimatedContainer(
+      duration: Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
+      margin: EdgeInsets.symmetric(vertical: 8),
+      child: Card(
+        elevation: 4,
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            children: [
+              TextField(
+                controller: _cardControllers[index]['front']!,
+                decoration: InputDecoration(
+                  labelText: 'Front ${index + 1}',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              SizedBox(height: 8),
+              TextField(
+                controller: _cardControllers[index]['back']!,
+                decoration: InputDecoration(
+                  labelText: 'Back ${index + 1}',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              _buildMoveButtons(index),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMoveButtons(int index) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        if (index != 0)
+          IconButton(
+            icon: Icon(Icons.arrow_upward),
+            onPressed: () => _moveCardUp(index),
+          ),
+        if (index != _cardControllers.length - 1)
+          IconButton(
+            icon: Icon(Icons.arrow_downward),
+            onPressed: () => _moveCardDown(index),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildAddCardButton() {
+    return ElevatedButton(
+      onPressed: _addCardController,
+      child: const Text('Add Another Card'),
+    );
+  }
+
+  Widget _buildSaveDeckButton() {
+    return ElevatedButton(
+      onPressed: _saveDeckAndCards,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.green,
+        foregroundColor: Colors.white,
+      ),
+      child: const Text('Save Deck and Cards'),
     );
   }
 }
