@@ -32,7 +32,7 @@ class FirebaseService {
 
     // Fetch the cards ordered by 'position'
     var cardsSnapshot =
-        await deckRef.collection('cards').get();
+        await deckRef.collection('cards').orderBy('position').get();
     var cards = cardsSnapshot.docs
         .asMap() // Convert to map to access index
         .map((index, doc) => MapEntry(index, {
