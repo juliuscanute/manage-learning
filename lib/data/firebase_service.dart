@@ -14,7 +14,11 @@ class FirebaseService {
   Stream<List<Map<String, dynamic>>> getDecksStream() {
     return _firestore.collection('decks').snapshots().map((snapshot) {
       return snapshot.docs
-          .map((doc) => {'id': doc.id, 'title': doc.data()['title']})
+          .map((doc) => {
+                'id': doc.id,
+                'title': doc.data()['title'],
+                'videoUrl': doc.data()['videoUrl'] ?? ''
+              })
           .toList();
     });
   }
@@ -29,6 +33,7 @@ class FirebaseService {
       throw Exception("Deck not found");
     }
     deckData['title'] = deckSnapshot.data()?['title'] ?? '';
+    deckData['videoUrl'] = deckSnapshot.data()?['videoUrl'] ?? '';
 
     // Fetch the cards ordered by 'position'
     var cardsSnapshot =
@@ -60,13 +65,13 @@ class FirebaseService {
     }
   }
 
-  Future<void> updateDeck(
-      String deckId, String title, List<Map<String, dynamic>> cards) async {
+  Future<void> updateDeck(String deckId, String title, String videoUrl,
+      List<Map<String, dynamic>> cards) async {
     var batch = _firestore.batch();
 
     // Update the deck title
     var deckRef = _firestore.collection('decks').doc(deckId);
-    batch.update(deckRef, {'title': title});
+    batch.update(deckRef, {'title': title, 'videoUrl': videoUrl});
 
     // Delete existing cards
     var cardCollection = deckRef.collection('cards');
@@ -88,6 +93,17 @@ class FirebaseService {
     }
 
     await batch.commit();
+  }
+
+  Future<void> updateDeckWithVideoUrl(String deckId, String videoUrl) async {
+    try {
+      await _firestore.collection('decks').doc(deckId).update({
+        'videoUrl': videoUrl,
+      });
+    } catch (e) {
+      print("Error updating deck with Video URL: $e");
+      // Handle any errors appropriately in your app context
+    }
   }
 
   Future<void> deleteDeck(String deckId) async {

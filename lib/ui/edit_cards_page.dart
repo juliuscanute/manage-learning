@@ -13,6 +13,8 @@ class EditCardsPage extends StatefulWidget {
 class _EditCardsPageState extends State<EditCardsPage> {
   late FirebaseService _firebaseService;
   final TextEditingController _deckTitleController = TextEditingController();
+  final TextEditingController _videoUrlController = TextEditingController();
+
   late List<Map<String, dynamic>> _cardControllers = []; // Include positioning
   bool _isLoading = true;
 
@@ -27,6 +29,8 @@ class _EditCardsPageState extends State<EditCardsPage> {
     setState(() => _isLoading = true);
     var deckData = await _firebaseService.getDeckData(widget.deckId);
     _deckTitleController.text = deckData['title'];
+    _videoUrlController.text =
+        deckData['videoUrl'] ?? ''; // Default to empty if not found
 
     // Adjusted to handle positioning
     var fetchedCards = deckData['cards'] as List<Map<String, dynamic>>;
@@ -54,10 +58,26 @@ class _EditCardsPageState extends State<EditCardsPage> {
     });
   }
 
+  Widget _buildVideoUrlInput() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: TextField(
+        controller: _videoUrlController,
+        decoration: InputDecoration(
+          border: OutlineInputBorder(),
+          labelText: 'Video URL',
+          hintText: 'Enter Video URL',
+        ),
+      ),
+    );
+  }
+
   Future<void> _saveDeckAndCards() async {
     await _firebaseService.updateDeck(
       widget.deckId,
       _deckTitleController.text,
+      _videoUrlController
+          .text, // Include this in your updateDeck method parameters
       _cardControllers.map((controllers) {
         return {
           'front': controllers['front'].text,
@@ -114,6 +134,7 @@ class _EditCardsPageState extends State<EditCardsPage> {
                         ),
                       ),
                       SizedBox(height: 16),
+                      _buildVideoUrlInput(), // Add the Video URL input here
                       Text('Cards',
                           style: Theme.of(context).textTheme.headline6),
                       ..._cardControllers.asMap().entries.map((entry) {

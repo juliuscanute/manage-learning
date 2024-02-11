@@ -10,6 +10,7 @@ class AddCardsPage extends StatefulWidget {
 class _AddCardsPageState extends State<AddCardsPage> {
   late FirebaseService _firebaseService;
   final TextEditingController _deckTitleController = TextEditingController();
+  final TextEditingController _videoeUrlController = TextEditingController();
   final List<Map<String, TextEditingController>> _cardControllers = [];
 
   @override
@@ -46,26 +47,34 @@ class _AddCardsPageState extends State<AddCardsPage> {
     }
   }
 
-Future<void> _saveDeckAndCards() async {
-  var deckId = await _firebaseService.createDeck(_deckTitleController.text);
-  for (var i = 0; i < _cardControllers.length; i++) {
-    var controllers = _cardControllers[i];
-    await _firebaseService.addCard(
-      deckId,
-      controllers['front']!.text,
-      controllers['back']!.text,
-      i, // Pass the index as the card's position
-    );
+  Future<void> _saveDeckAndCards() async {
+    var deckId = await _firebaseService.createDeck(_deckTitleController.text);
+
+    // Save the Video URL to the deck
+    if (_videoeUrlController.text.isNotEmpty) {
+      await _firebaseService.updateDeckWithVideoUrl(
+          deckId, _videoeUrlController.text);
+    }
+
+    for (var i = 0; i < _cardControllers.length; i++) {
+      var controllers = _cardControllers[i];
+      await _firebaseService.addCard(
+        deckId,
+        controllers['front']!.text,
+        controllers['back']!.text,
+        i, // Pass the index as the card's position
+      );
+    }
+    var currentContext = context;
+    Future.delayed(Duration.zero, () {
+      Navigator.of(currentContext).pop();
+    });
   }
-  var currentContext = context;
-  Future.delayed(Duration.zero, () {
-    Navigator.of(currentContext).pop();
-  });
-}
 
   @override
   void dispose() {
     _deckTitleController.dispose();
+    _videoeUrlController.dispose(); // Dispose of the Video URL controller
     for (var controller in _cardControllers) {
       controller['front']!.dispose();
       controller['back']!.dispose();
@@ -86,6 +95,7 @@ Future<void> _saveDeckAndCards() async {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _buildDeckTitleInput(),
+                _buildVideoUrlInput(),
                 _buildCardsList(),
                 _buildAddCardButton(),
                 _buildSaveDeckButton(),
@@ -94,6 +104,24 @@ Future<void> _saveDeckAndCards() async {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildVideoUrlInput() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Video URL', style: Theme.of(context).textTheme.headline6),
+        SizedBox(height: 8),
+        TextField(
+          controller: _videoeUrlController,
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+            hintText: 'Enter Video URL',
+          ),
+        ),
+        SizedBox(height: 16),
+      ],
     );
   }
 
@@ -120,8 +148,7 @@ Future<void> _saveDeckAndCards() async {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Cards', style: Theme.of(context).textTheme.headline6),
-        for (int i = 0; i < _cardControllers.length; i++)
-          _buildCardItem(i),
+        for (int i = 0; i < _cardControllers.length; i++) _buildCardItem(i),
       ],
     );
   }
