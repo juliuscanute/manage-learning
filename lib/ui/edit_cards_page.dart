@@ -103,7 +103,7 @@ class _EditCardsPageState extends State<EditCardsPage> {
     return Column(
       children: [
         if (_cardControllers[index]['image'] != null ||
-            _cardControllers[index]['imageUrl'].isNotEmpty)
+            _cardControllers[index]['imageUrl']?.isNotEmpty == true)
           Container(
             height: 100,
             width: 100,
@@ -119,6 +119,23 @@ class _EditCardsPageState extends State<EditCardsPage> {
                 : Image.network(
                     _cardControllers[index]['imageUrl'],
                     fit: BoxFit.cover,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) {
+                        return child;
+                      }
+                      return const Center(
+                        child: CircularProgressIndicator(),
+                      );
+                    },
+                    errorBuilder: (context, error, stackTrace) {
+                      return Center(
+                        child: Icon(
+                          Icons.error,
+                          size: 24,
+                          color: Colors.red,
+                        ),
+                      );
+                    },
                   ),
           ),
         ElevatedButton.icon(

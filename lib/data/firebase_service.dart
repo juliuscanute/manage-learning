@@ -113,6 +113,15 @@ class FirebaseService {
   }
 
   Future<void> deleteDeck(String deckId) async {
+    var cardsSnapshot = await _firestore
+        .collection('decks')
+        .doc(deckId)
+        .collection('cards')
+        .get();
+    for (var doc in cardsSnapshot.docs) {
+      var imageUrl = doc.data()['imageUrl'];
+      deleteImage(imageUrl);
+    }
     await _firestore.collection('decks').doc(deckId).delete();
   }
 
