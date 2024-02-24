@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 
 class Deck {
   final String id;
@@ -41,8 +42,10 @@ class FirebaseService {
     var cards = cardsSnapshot.docs
         .asMap() // Convert to map to access index
         .map((index, doc) => MapEntry(index, {
+              'id': doc.id,
               'front': doc.data()['front'] ?? '',
               'back': doc.data()['back'] ?? '',
+              'imageUrl': doc.data()['imageUrl'] ?? '',
               'position':
                   doc.data()['position'] ?? index, // Use map index as fallback
             }))
@@ -86,8 +89,9 @@ class FirebaseService {
       var newCardRef =
           cardCollection.doc(); // Generating a new document reference
       batch.set(newCardRef, {
-        'front': card['front'],
-        'back': card['back'],
+        'front': (card['front'] as TextEditingController).text,
+        'back': (card['back'] as TextEditingController).text,
+        'imageUrl': card['imageUrl'], // Include the card's image URL
         'position': i, // Include the card's position
       });
     }
@@ -110,66 +114,18 @@ class FirebaseService {
     await _firestore.collection('decks').doc(deckId).delete();
   }
 
-  Stream<List<Map<String, dynamic>>> getCardsStream(String deckId) {
-    return _firestore
-        .collection('decks')
-        .doc(deckId)
-        .collection('cards')
-        .orderBy('position', descending: false) // Attempt to order by position
-        .snapshots()
-        .map((snapshot) {
-      var docs = snapshot.docs;
-      // Check if documents have the 'position' field; if not, rely on their index
-      var arePositionsAvailable =
-          docs.any((doc) => doc.data().containsKey('position'));
-
-      List<Map<String, dynamic>> cards;
-      if (arePositionsAvailable) {
-        // If positions are available, sort by position
-        cards = docs
-            .map((doc) => {
-                  'id': doc.id,
-                  'front': doc.data()['front'],
-                  'back': doc.data()['back'],
-                  // Including position for debugging or UI purposes
-                  'position': doc.data()['position'] ?? docs.indexOf(doc),
-                })
-            .toList();
-      } else {
-        // Fallback to using the index if position is not available
-        cards = docs.asMap().entries.map((entry) {
-          int idx = entry.key;
-          var doc = entry.value;
-          return {
-            'id': doc.id,
-            'front': doc.data()['front'],
-            'back': doc.data()['back'],
-            // Use index as fallback position
-            'position': idx,
-          };
-        }).toList();
-      }
-
-      // Note: This sorting is a fallback and might not be needed if 'orderBy' is effective
-      // Sort based on position to ensure order, especially if relying on index as fallback
-      cards.sort(
-          (a, b) => (a['position'] as int).compareTo(b['position'] as int));
-
-      return cards;
-    });
-  }
-
-  Future<void> addCard(
-      String deckId, String front, String back, int position) async {
+  Future<void> addCard(String deckId, String front, String back,
+      String imageUrl, int position) async {
     await _firestore.collection('decks').doc(deckId).collection('cards').add({
       'front': front,
       'back': back,
+      'imageUrl': imageUrl, // Include the image URL in the saved data
       'position': position, // Include the position in the saved data
     });
   }
 
-  Future<void> updateCard(
-      String deckId, String cardId, String front, String back) async {
+  Future<void> updateCard(String deckId, String cardId, String front,
+      String back, String position, String imageUrl) async {
     await _firestore
         .collection('decks')
         .doc(deckId)
@@ -178,6 +134,8 @@ class FirebaseService {
         .update({
       'front': front,
       'back': back,
+      'position': position,
+      'imageUrl': imageUrl
     });
   }
 

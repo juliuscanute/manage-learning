@@ -1,6 +1,16 @@
+// import 'dart:io';
+
+import 'dart:io';
+
+import 'package:path/path.dart' hide context;
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:manage_learning/data/firebase_service.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_storage/firebase_storage.dart'; // For uploading images
+// Conditional import for handling files
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class AddCardsPage extends StatefulWidget {
   @override
@@ -11,7 +21,8 @@ class _AddCardsPageState extends State<AddCardsPage> {
   late FirebaseService _firebaseService;
   final TextEditingController _deckTitleController = TextEditingController();
   final TextEditingController _videoeUrlController = TextEditingController();
-  final List<Map<String, TextEditingController>> _cardControllers = [];
+  final List<Map<String, dynamic>> _cardControllers = [];
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
@@ -25,6 +36,7 @@ class _AddCardsPageState extends State<AddCardsPage> {
       _cardControllers.add({
         'front': TextEditingController(),
         'back': TextEditingController(),
+        'image': null, // Initialize image path as null
       });
     });
   }
@@ -56,17 +68,69 @@ class _AddCardsPageState extends State<AddCardsPage> {
           deckId, _videoeUrlController.text);
     }
 
+    // For showing a linear progress indicator
+    double totalUploadSteps = _cardControllers.length.toDouble();
+    double currentStep = 0;
+
+    Future.delayed(Duration.zero, () {
+      showDialog(
+        context: context,
+        barrierDismissible: false, // Prevent dialog from closing
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Uploading Cards...'),
+            content: StatefulBuilder(
+              builder: (context, setState) => LinearProgressIndicator(
+                value: currentStep / totalUploadSteps,
+              ),
+            ),
+          );
+        },
+      );
+    });
+
     for (var i = 0; i < _cardControllers.length; i++) {
       var controllers = _cardControllers[i];
+      String imageUrl = '';
+
+      if (controllers['image'] != null) {
+        String fileName =
+            controllers['imageName']; // Assume this is set during image picking
+        try {
+          if (kIsWeb) {
+            Uint8List imageBytes = controllers['image'];
+            TaskSnapshot snapshot = await FirebaseStorage.instance
+                .ref('card_images/$deckId/$fileName')
+                .putData(imageBytes);
+            imageUrl = await snapshot.ref.getDownloadURL();
+          } else {
+            File imageFile = File(controllers['image']);
+            TaskSnapshot snapshot = await FirebaseStorage.instance
+                .ref('card_images/$deckId/${basename(imageFile.path)}')
+                .putFile(imageFile);
+            imageUrl = await snapshot.ref.getDownloadURL();
+          }
+          // Continue with saving card details
+        } catch (e) {
+          print("Error uploading image: $e");
+        }
+      }
       await _firebaseService.addCard(
         deckId,
         controllers['front']!.text,
         controllers['back']!.text,
+        imageUrl,
         i, // Pass the index as the card's position
       );
+
+      // Update progress
+      setState(() {
+        currentStep++;
+      });
     }
     var currentContext = context;
     Future.delayed(Duration.zero, () {
+      Navigator.pop(currentContext);
       Navigator.of(currentContext).pop();
     });
   }
@@ -179,12 +243,82 @@ class _AddCardsPageState extends State<AddCardsPage> {
                   border: OutlineInputBorder(),
                 ),
               ),
+              SizedBox(height: 8),
+              _buildImagePicker(index),
               _buildMoveButtons(index),
             ],
           ),
         ),
       ),
     );
+  }
+
+  Widget _buildImagePicker(int index) {
+    ImageProvider? imageProvider; // Mark as nullable
+
+    // Check if there is an image for the current card
+    if (_cardControllers[index]['image'] != null) {
+      if (kIsWeb) {
+        // For web, use MemoryImage with Uint8List
+        Uint8List imageBytes = _cardControllers[index]['image'] as Uint8List;
+        imageProvider = MemoryImage(imageBytes);
+      } else {
+        // For mobile, use FileImage with a File object
+        String imagePath = _cardControllers[index]['image'] as String;
+        imageProvider = FileImage(
+            File(imagePath)); // Use the File class from the 'dart:io' package
+      }
+
+      // Return the image container if there's an image present
+      return Column(
+        children: [
+          Container(
+            height: 100,
+            width: 100,
+            decoration: BoxDecoration(
+              image: DecorationImage(
+                fit: BoxFit.cover,
+                image: imageProvider!,
+              ),
+            ),
+          ),
+          SizedBox(height: 8),
+          ElevatedButton.icon(
+            onPressed: () => _pickImage(index),
+            icon: Icon(Icons.image),
+            label: Text('Pick Recall Image'),
+          ),
+        ],
+      );
+    }
+
+    // Return a placeholder or button if no image is available
+    return ElevatedButton.icon(
+      onPressed: () => _pickImage(index),
+      icon: Icon(Icons.image),
+      label: Text('Pick Recall Image'),
+    );
+  }
+
+  Future<void> _pickImage(int index) async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      // Different handling for web
+      if (kIsWeb) {
+        // Read the file as bytes and store it
+        Uint8List fileBytes = await pickedFile.readAsBytes();
+        String fileName = pickedFile.name;
+        setState(() {
+          _cardControllers[index]['image'] = fileBytes;
+          _cardControllers[index]['imageName'] =
+              fileName; // Store the file name separately
+        });
+      } else {
+        setState(() {
+          _cardControllers[index]['image'] = pickedFile.path;
+        });
+      }
+    }
   }
 
   Widget _buildMoveButtons(int index) {
@@ -214,7 +348,7 @@ class _AddCardsPageState extends State<AddCardsPage> {
 
   Widget _buildSaveDeckButton() {
     return ElevatedButton(
-      onPressed: _saveDeckAndCards,
+      onPressed: () => _saveDeckAndCards(),
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,

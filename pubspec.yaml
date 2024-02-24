@@ -32,9 +32,9 @@ dependencies:
     sdk: flutter
   http: ^0.13.3
   flutter_dotenv: ^5.1.0
-  firebase_core: ^2.23.0
+  firebase_core: ^2.24.2
   firebase_auth: ^4.14.0
-  firebase_database: ^10.3.4
+  firebase_database: ^10.4.0
   cloud_firestore: ^4.14.0
   url_launcher: ^6.2.4
 
@@ -42,6 +42,9 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2
   provider: ^6.1.1
+  image_picker: ^0.8.4+4
+  firebase_storage: ^11.6.0
+  path: ^1.8.3
 
 dev_dependencies:
   flutter_test:

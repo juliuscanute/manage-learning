@@ -1,6 +1,12 @@
+import 'dart:io';
+
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:manage_learning/data/firebase_service.dart';
 import 'package:provider/provider.dart';
+import 'package:path/path.dart' hide context;
 
 class EditCardsPage extends StatefulWidget {
   final String deckId;
@@ -14,6 +20,7 @@ class _EditCardsPageState extends State<EditCardsPage> {
   late FirebaseService _firebaseService;
   final TextEditingController _deckTitleController = TextEditingController();
   final TextEditingController _videoUrlController = TextEditingController();
+  final ImagePicker _picker = ImagePicker();
 
   late List<Map<String, dynamic>> _cardControllers = []; // Include positioning
   bool _isLoading = true;
@@ -39,6 +46,7 @@ class _EditCardsPageState extends State<EditCardsPage> {
               'front': TextEditingController(text: cardData['front']),
               'back': TextEditingController(text: cardData['back']),
               'position': cardData['position'], // Store position
+              'imageUrl': cardData['imageUrl'] ?? '',
             })
         .toList()
       ..sort((a, b) => (a['position'] as int)
@@ -58,6 +66,25 @@ class _EditCardsPageState extends State<EditCardsPage> {
     });
   }
 
+  Future<void> _pickImage(int index) async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      if (kIsWeb) {
+        Uint8List fileBytes = await pickedFile.readAsBytes();
+        String fileName = pickedFile.name;
+        setState(() {
+          _cardControllers[index]['image'] = fileBytes;
+          _cardControllers[index]['imageName'] = fileName;
+        });
+      } else {
+        setState(() {
+          _cardControllers[index]['image'] = pickedFile.path;
+          _cardControllers[index]['imageName'] = basename(pickedFile.path);
+        });
+      }
+    }
+  }
+
   Widget _buildVideoUrlInput() {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
@@ -72,21 +99,101 @@ class _EditCardsPageState extends State<EditCardsPage> {
     );
   }
 
-  Future<void> _saveDeckAndCards() async {
-    await _firebaseService.updateDeck(
-      widget.deckId,
-      _deckTitleController.text,
-      _videoUrlController
-          .text, // Include this in your updateDeck method parameters
-      _cardControllers.map((controllers) {
-        return {
-          'front': controllers['front'].text,
-          'back': controllers['back'].text,
-          'position': controllers['position'], // Save with updated position
-        };
-      }).toList(),
+  Widget _buildImagePicker(int index) {
+    return Column(
+      children: [
+        if (_cardControllers[index]['image'] != null ||
+            _cardControllers[index]['imageUrl'].isNotEmpty)
+          Container(
+            height: 100,
+            width: 100,
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: _cardControllers[index]['image'] != null
+                ? Image.memory(
+                    _cardControllers[index]['image'],
+                    fit: BoxFit.cover,
+                  )
+                : Image.network(
+                    _cardControllers[index]['imageUrl'],
+                    fit: BoxFit.cover,
+                  ),
+          ),
+        ElevatedButton.icon(
+          onPressed: () => _pickImage(index),
+          icon: Icon(Icons.image),
+          label: Text('Pick Image'),
+        ),
+      ],
     );
-    Navigator.pop(context);
+  }
+
+  Future<void> _saveDeckAndCards() async {
+    // Showing a progress indicator dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Uploading Images...'),
+          content: StatefulBuilder(
+            builder: (context, setState) {
+              return LinearProgressIndicator(
+                value:
+                    null, // null value shows an indeterminate progress bar initially
+              );
+            },
+          ),
+        );
+      },
+    );
+
+    for (int i = 0; i < _cardControllers.length; i++) {
+      var controller = _cardControllers[i];
+      if (controller['image'] != null) {
+        // New image has been selected; upload it
+        try {
+          String fileName = controller['imageName'];
+          var image = controller['image'];
+
+          if (kIsWeb) {
+            Uint8List imageBytes = image as Uint8List;
+            TaskSnapshot snapshot = await FirebaseStorage.instance
+                .ref('card_images/${widget.deckId}/$fileName')
+                .putData(imageBytes);
+            String newImageUrl = await snapshot.ref.getDownloadURL();
+            controller['imageUrl'] = newImageUrl; // Update with new image URL
+          } else {
+            File imageFile = File(image as String);
+            TaskSnapshot snapshot = await FirebaseStorage.instance
+                .ref('card_images/${widget.deckId}/${basename(imageFile.path)}')
+                .putFile(imageFile);
+            String newImageUrl = await snapshot.ref.getDownloadURL();
+            controller['imageUrl'] = newImageUrl;
+          }
+
+          // Optionally update progress indicator here if you want to show detailed progress
+        } catch (e) {
+          print("Error uploading image: $e");
+          // Handle error, perhaps close the dialog and show an error message
+        }
+      }
+
+      await _firebaseService.updateDeck(
+        widget.deckId,
+        _deckTitleController.text,
+        _videoUrlController.text,
+        _cardControllers,
+      );
+    }
+
+    // Close the progress dialog
+    Navigator.pop(context); // Assuming this is how you close your dialog
+
+    // Optional: show a success message or navigate away
+    Navigator.of(context).pop(); // Navigate back to the previous screen
   }
 
   void _addCardController() {
@@ -179,6 +286,8 @@ class _EditCardsPageState extends State<EditCardsPage> {
                                     ),
                                   ],
                                 ),
+                                SizedBox(height: 8),
+                                _buildImagePicker(i),
                               ],
                             ),
                           ),
