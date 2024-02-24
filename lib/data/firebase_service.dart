@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 
 class Deck {
@@ -11,6 +12,7 @@ class Deck {
 
 class FirebaseService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseStorage _storage = FirebaseStorage.instance;
 
   Stream<List<Map<String, dynamic>>> getDecksStream() {
     return _firestore.collection('decks').snapshots().map((snapshot) {
@@ -146,5 +148,20 @@ class FirebaseService {
         .collection('cards')
         .doc(cardId)
         .delete();
+  }
+
+  Future<void> deleteImage(String? imageUrl) async {
+    if (imageUrl == null || imageUrl.isEmpty) {
+      return;
+    }
+    try {
+      // Create a reference to the storage item using the URL
+      Reference ref = _storage.refFromURL(imageUrl);
+      // Delete the image
+      await ref.delete();
+      print("Old image deleted successfully");
+    } catch (e) {
+      print("Error deleting old image: $e");
+    }
   }
 }
