@@ -112,6 +112,15 @@ class FirebaseService {
     }
   }
 
+  Future<void> deleteCard(String deckId, String cardId) async {
+    await _firestore
+        .collection('decks')
+        .doc(deckId)
+        .collection('cards')
+        .doc(cardId)
+        .delete();
+  }
+
   Future<void> deleteDeck(String deckId) async {
     var cardsSnapshot = await _firestore
         .collection('decks')
@@ -150,14 +159,14 @@ class FirebaseService {
     });
   }
 
-  Future<void> deleteCard(String deckId, String cardId) async {
-    await _firestore
-        .collection('decks')
-        .doc(deckId)
-        .collection('cards')
-        .doc(cardId)
-        .delete();
-  }
+  // Future<void> deleteCard(String deckId, String cardId) async {
+  //   await _firestore
+  //       .collection('decks')
+  //       .doc(deckId)
+  //       .collection('cards')
+  //       .doc(cardId)
+  //       .delete();
+  // }
 
   Future<void> deleteImage(String? imageUrl) async {
     if (imageUrl == null || imageUrl.isEmpty) {

@@ -228,24 +228,41 @@ class _AddCardsPageState extends State<AddCardsPage> {
           padding: const EdgeInsets.all(8.0),
           child: Column(
             children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Card ${index + 1}',
+                      style: Theme.of(context).textTheme.headline6),
+                  IconButton(
+                    icon: Icon(Icons.delete, color: Colors.red),
+                    onPressed: () => setState(() {
+                      _cardControllers.removeAt(index);
+                    }),
+                    tooltip: 'Delete Card',
+                  ),
+                ],
+              ),
               TextField(
-                controller: _cardControllers[index]['front']!,
+                controller:
+                    _cardControllers[index]['front'] as TextEditingController,
                 decoration: InputDecoration(
-                  labelText: 'Front ${index + 1}',
+                  labelText: 'Front',
                   border: OutlineInputBorder(),
                 ),
               ),
               SizedBox(height: 8),
               TextField(
-                controller: _cardControllers[index]['back']!,
+                controller:
+                    _cardControllers[index]['back'] as TextEditingController,
                 decoration: InputDecoration(
-                  labelText: 'Back ${index + 1}',
+                  labelText: 'Back',
                   border: OutlineInputBorder(),
                 ),
               ),
               SizedBox(height: 8),
-              _buildImagePicker(index),
-              _buildMoveButtons(index),
+              _buildImagePicker(
+                  index), // Assuming this method builds your image picker UI
+              _buildMoveButtons(index), // If you have move up/down buttons
             ],
           ),
         ),

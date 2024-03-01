@@ -268,47 +268,60 @@ class _EditCardsPageState extends State<EditCardsPage> {
                         Map<String, dynamic> controller = entry.value;
                         return Card(
                           margin: const EdgeInsets.symmetric(vertical: 8),
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Column(
-                              children: [
-                                TextField(
-                                  controller: controller['front'],
-                                  decoration: InputDecoration(
-                                    labelText: 'Front ${i + 1}',
-                                    border: OutlineInputBorder(),
-                                  ),
-                                ),
-                                SizedBox(height: 8),
-                                TextField(
-                                  controller: controller['back'],
-                                  decoration: InputDecoration(
-                                    labelText: 'Back ${i + 1}',
-                                    border: OutlineInputBorder(),
-                                  ),
-                                ),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
+                          child: Stack(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.all(
+                                    8.0), // Adjust this value as needed
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
                                   children: [
-                                    IconButton(
-                                      icon: Icon(Icons.arrow_upward),
-                                      onPressed: i > 0
-                                          ? () => _moveCard(i, i - 1)
-                                          : null,
+                                    SizedBox(
+                                        height:
+                                            48), // Space for the delete button
+                                    TextField(
+                                      controller: controller['front'],
+                                      decoration: InputDecoration(
+                                        labelText: 'Front ${i + 1}',
+                                        border: OutlineInputBorder(),
+                                      ),
                                     ),
-                                    IconButton(
-                                      icon: Icon(Icons.arrow_downward),
-                                      onPressed: i < _cardControllers.length - 1
-                                          ? () => _moveCard(i, i + 1)
-                                          : null,
+                                    SizedBox(height: 8),
+                                    TextField(
+                                      controller: controller['back'],
+                                      decoration: InputDecoration(
+                                        labelText: 'Back ${i + 1}',
+                                        border: OutlineInputBorder(),
+                                      ),
                                     ),
+                                    SizedBox(height: 8),
+                                    _buildImagePicker(i),
                                   ],
                                 ),
-                                SizedBox(height: 8),
-                                _buildImagePicker(i),
-                              ],
-                            ),
+                              ),
+                              Positioned(
+                                right:
+                                    4, // Adjust based on your design preference
+                                top:
+                                    4, // Adjust based on your design preference
+                                child: IconButton(
+                                  icon: Icon(Icons.delete, color: Colors.red),
+                                  onPressed: () async {
+                                    await _firebaseService
+                                        .deleteImage(controller['imageUrl']);
+                                    setState(() {
+                                      _cardControllers.removeAt(i);
+                                      for (int j = 0;
+                                          j < _cardControllers.length;
+                                          j++) {
+                                        _cardControllers[j]['position'] = j;
+                                      }
+                                    });
+                                  },
+                                ),
+                              ),
+                            ],
                           ),
                         );
                       }).toList(),
