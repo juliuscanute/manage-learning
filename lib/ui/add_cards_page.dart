@@ -150,23 +150,69 @@ class _AddCardsPageState extends State<AddCardsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Add New Deck and Cards')),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: 600),
-          child: SingleChildScrollView(
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildDeckTitleInput(),
+                  _buildVideoUrlInput(),
+                  _buildCardsList(),
+                ],
+              ),
+            ),
+          ),
+          Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment
+                  .spaceEvenly, // This centers the buttons horizontally and spaces them evenly.
               children: [
-                _buildDeckTitleInput(),
-                _buildVideoUrlInput(),
-                _buildCardsList(),
-                _buildAddCardButton(),
-                _buildSaveDeckButton(),
+                Expanded(
+                  // Wrap with Expanded for flexible button widths
+                  child: Padding(
+                    padding: const EdgeInsets.only(
+                        right: 8.0), // Add some space between the buttons
+                    child: ElevatedButton(
+                      onPressed: _addCardController,
+                      child: const Text('Add Another Card'),
+                      style: ElevatedButton.styleFrom(
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(
+                              20), // Optional: Adds rounded corners
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  // Wrap with Expanded for flexible button widths
+                  child: Padding(
+                    padding: const EdgeInsets.only(
+                        left: 8.0), // Add some space between the buttons
+                    child: ElevatedButton(
+                      onPressed: () => _saveDeckAndCards(),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(
+                              20), // Optional: Adds rounded corners
+                        ),
+                      ),
+                      child: const Text('Save Deck and Cards'),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -353,24 +399,6 @@ class _AddCardsPageState extends State<AddCardsPage> {
             onPressed: () => _moveCardDown(index),
           ),
       ],
-    );
-  }
-
-  Widget _buildAddCardButton() {
-    return ElevatedButton(
-      onPressed: _addCardController,
-      child: const Text('Add Another Card'),
-    );
-  }
-
-  Widget _buildSaveDeckButton() {
-    return ElevatedButton(
-      onPressed: () => _saveDeckAndCards(),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.green,
-        foregroundColor: Colors.white,
-      ),
-      child: const Text('Save Deck and Cards'),
     );
   }
 }

@@ -239,110 +239,175 @@ class _EditCardsPageState extends State<EditCardsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Edit Deck and Cards')),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Center(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: 600),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text('Deck Title',
-                          style: Theme.of(context).textTheme.headline6),
-                      SizedBox(height: 8),
-                      TextField(
-                        controller: _deckTitleController,
-                        decoration: const InputDecoration(
-                          border: OutlineInputBorder(),
-                          hintText: 'Enter deck title',
-                        ),
-                      ),
-                      SizedBox(height: 16),
-                      _buildVideoUrlInput(), // Add the Video URL input here
-                      Text('Cards',
-                          style: Theme.of(context).textTheme.headline6),
-                      ..._cardControllers.asMap().entries.map((entry) {
-                        int i = entry.key;
-                        Map<String, dynamic> controller = entry.value;
-                        return Card(
-                          margin: const EdgeInsets.symmetric(vertical: 8),
-                          child: Stack(
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.all(
-                                    8.0), // Adjust this value as needed
-                                child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.stretch,
-                                  children: [
-                                    SizedBox(
-                                        height:
-                                            48), // Space for the delete button
-                                    TextField(
-                                      controller: controller['front'],
-                                      decoration: InputDecoration(
-                                        labelText: 'Front ${i + 1}',
-                                        border: OutlineInputBorder(),
-                                      ),
-                                    ),
-                                    SizedBox(height: 8),
-                                    TextField(
-                                      controller: controller['back'],
-                                      decoration: InputDecoration(
-                                        labelText: 'Back ${i + 1}',
-                                        border: OutlineInputBorder(),
-                                      ),
-                                    ),
-                                    SizedBox(height: 8),
-                                    _buildImagePicker(i),
-                                  ],
-                                ),
-                              ),
-                              Positioned(
-                                right:
-                                    4, // Adjust based on your design preference
-                                top:
-                                    4, // Adjust based on your design preference
-                                child: IconButton(
-                                  icon: Icon(Icons.delete, color: Colors.red),
-                                  onPressed: () async {
-                                    await _firebaseService
-                                        .deleteImage(controller['imageUrl']);
-                                    setState(() {
-                                      _cardControllers.removeAt(i);
-                                      for (int j = 0;
-                                          j < _cardControllers.length;
-                                          j++) {
-                                        _cardControllers[j]['position'] = j;
-                                      }
-                                    });
-                                  },
-                                ),
-                              ),
-                            ],
+      body: Column(
+        children: [
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text('Deck Title',
+                              style: Theme.of(context).textTheme.headline6),
+                          SizedBox(height: 8),
+                          TextField(
+                            controller: _deckTitleController,
+                            decoration: const InputDecoration(
+                              border: OutlineInputBorder(),
+                              hintText: 'Enter deck title',
+                            ),
                           ),
-                        );
-                      }).toList(),
-                      ElevatedButton(
-                        onPressed: _addCardController,
-                        child: const Text('Add Another Card'),
+                          SizedBox(height: 16),
+                          _buildVideoUrlInput(),
+                          Text('Cards',
+                              style: Theme.of(context).textTheme.headline6),
+                          ..._cardControllers
+                              .asMap()
+                              .entries
+                              .map(
+                                  (entry) => _buildCard(entry.value, entry.key))
+                              .toList(),
+                        ],
                       ),
-                      SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: _saveDeckAndCards,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          foregroundColor: Colors.white,
-                        ),
-                        child: const Text('Save Deck and Cards'),
+                    ),
+                  ),
+          ),
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.5),
+                  spreadRadius: 5,
+                  blurRadius: 7,
+                  offset: Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: ElevatedButton(
+                      onPressed: _addCardController,
+                      child: Text('Add Another Card'),
+                      style: ElevatedButton.styleFrom(
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20)),
                       ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 8.0),
+                    child: ElevatedButton(
+                      onPressed: _saveDeckAndCards,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20)),
+                      ),
+                      child: Text('Save Deck and Cards'),
+                    ),
+                  ),
+                ),
+              ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCard(Map<String, dynamic> controller, int index) {
+    return Card(
+      margin: const EdgeInsets.symmetric(
+          vertical: 8, horizontal: 4), // Add horizontal margin to Card
+      child: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(
+                top: 16,
+                left: 16,
+                right: 16,
+                bottom: 8), // Increase padding for content
+            child: Column(
+              children: [
+                // Add spacing or a placeholder at the top to avoid overlap with the delete button
+                SizedBox(
+                    height:
+                        24), // Adjust the height as needed to ensure it doesn't overlap with delete button
+                TextField(
+                  controller: controller['front'] as TextEditingController,
+                  decoration: const InputDecoration(
+                    labelText: 'Front',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: controller['back'] as TextEditingController,
+                  decoration: const InputDecoration(
+                    labelText: 'Back',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                _buildImagePicker(index),
+                const SizedBox(
+                    height: 16), // Add some space before the move buttons
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.arrow_upward),
+                      onPressed:
+                          index == 0 ? null : () => _moveCard(index, index - 1),
+                      tooltip: 'Move Up',
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.arrow_downward),
+                      onPressed: index == _cardControllers.length - 1
+                          ? null
+                          : () => _moveCard(index, index + 1),
+                      tooltip: 'Move Down',
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Positioned(
+            right: 8,
+            top:
+                0, // Adjust the top position to ensure it's clearly visible and not overlapping
+            child: IconButton(
+              icon: Icon(Icons.delete, color: Colors.red),
+              onPressed: () async {
+                if (controller['imageUrl'] != null &&
+                    controller['imageUrl'].isNotEmpty) {
+                  await _firebaseService.deleteImage(controller['imageUrl']);
+                }
+                setState(() {
+                  _cardControllers.removeAt(index);
+                });
+              },
+              tooltip: 'Delete Card',
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
