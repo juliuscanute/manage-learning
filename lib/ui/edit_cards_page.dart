@@ -20,6 +20,8 @@ class _EditCardsPageState extends State<EditCardsPage> {
   late FirebaseService _firebaseService;
   final TextEditingController _deckTitleController = TextEditingController();
   final TextEditingController _videoUrlController = TextEditingController();
+  final TextEditingController _tagsController = TextEditingController();
+
   final ImagePicker _picker = ImagePicker();
 
   late List<Map<String, dynamic>> _cardControllers = []; // Include positioning
@@ -38,6 +40,9 @@ class _EditCardsPageState extends State<EditCardsPage> {
     _deckTitleController.text = deckData['title'];
     _videoUrlController.text =
         deckData['videoUrl'] ?? ''; // Default to empty if not found
+
+    List<String> tags = List.from(deckData['tags'] ?? []);
+    _tagsController.text = tags.join('/');
 
     // Adjusted to handle positioning
     var fetchedCards = deckData['cards'] as List<Map<String, dynamic>>;
@@ -83,6 +88,20 @@ class _EditCardsPageState extends State<EditCardsPage> {
         });
       }
     }
+  }
+
+  Widget _buildTagsInput() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: TextField(
+        controller: _tagsController,
+        decoration: InputDecoration(
+          border: OutlineInputBorder(),
+          labelText: 'Tags',
+          hintText: 'Enter tags (e.g., a/b/c)',
+        ),
+      ),
+    );
   }
 
   Widget _buildVideoUrlInput() {
@@ -200,11 +219,17 @@ class _EditCardsPageState extends State<EditCardsPage> {
         }
       }
 
+      List<String> tags = _tagsController.text
+          .split('/')
+          .where((tag) => tag.isNotEmpty)
+          .toList();
+
       await _firebaseService.updateDeck(
         widget.deckId,
         _deckTitleController.text,
         _videoUrlController.text,
         _cardControllers,
+        tags,
       );
     }
 
@@ -262,6 +287,7 @@ class _EditCardsPageState extends State<EditCardsPage> {
                           ),
                           SizedBox(height: 16),
                           _buildVideoUrlInput(),
+                          _buildTagsInput(), // Include the tags input here
                           Text('Cards',
                               style: Theme.of(context).textTheme.headline6),
                           ..._cardControllers

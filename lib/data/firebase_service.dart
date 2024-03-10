@@ -6,8 +6,14 @@ class Deck {
   final String id;
   final String title;
   final List<Map<String, dynamic>> cards;
+  final List<String> tags; // Add tags field
 
-  Deck({required this.id, required this.title, required this.cards});
+  Deck({
+    required this.id,
+    required this.title,
+    required this.cards,
+    required this.tags, // Add tags to the constructor
+  });
 }
 
 class FirebaseService {
@@ -19,8 +25,10 @@ class FirebaseService {
       return snapshot.docs
           .map((doc) => {
                 'id': doc.id,
-                'title': doc.data()['title'],
-                'videoUrl': doc.data()['videoUrl'] ?? ''
+                'title': doc.data()['title'] ?? '',
+                'videoUrl': doc.data()['videoUrl'] ?? '',
+                'tags':
+                    List.from(doc.data()['tags'] ?? []), // Include tags here
               })
           .toList();
     });
@@ -29,7 +37,6 @@ class FirebaseService {
   Future<Map<String, dynamic>> getDeckData(String deckId) async {
     var deckData = <String, dynamic>{};
 
-    // Fetch the deck document
     var deckRef = _firestore.collection('decks').doc(deckId);
     var deckSnapshot = await deckRef.get();
     if (!deckSnapshot.exists) {
@@ -37,6 +44,8 @@ class FirebaseService {
     }
     deckData['title'] = deckSnapshot.data()?['title'] ?? '';
     deckData['videoUrl'] = deckSnapshot.data()?['videoUrl'] ?? '';
+    deckData['tags'] =
+        List.from(deckSnapshot.data()?['tags'] ?? []); // Add tags here
 
     // Fetch the cards ordered by 'position'
     var cardsSnapshot =
@@ -58,10 +67,11 @@ class FirebaseService {
     return deckData;
   }
 
-  Future<String> createDeck(String title) async {
+  Future<String> createDeck(String title, List<String> tags) async {
     try {
       var newDeckRef = await _firestore.collection('decks').add({
         'title': title,
+        'tags': tags, // Add tags here
       });
       return newDeckRef.id; // Return the newly created deck ID
     } catch (e) {
@@ -71,12 +81,15 @@ class FirebaseService {
   }
 
   Future<void> updateDeck(String deckId, String title, String videoUrl,
-      List<Map<String, dynamic>> cards) async {
+      List<Map<String, dynamic>> cards, List<String> tags) async {
     var batch = _firestore.batch();
 
-    // Update the deck title
     var deckRef = _firestore.collection('decks').doc(deckId);
-    batch.update(deckRef, {'title': title, 'videoUrl': videoUrl});
+    batch.update(deckRef, {
+      'title': title,
+      'videoUrl': videoUrl,
+      'tags': tags, // Update tags here
+    });
 
     // Delete existing cards
     var cardCollection = deckRef.collection('cards');

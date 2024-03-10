@@ -21,6 +21,8 @@ class _AddCardsPageState extends State<AddCardsPage> {
   late FirebaseService _firebaseService;
   final TextEditingController _deckTitleController = TextEditingController();
   final TextEditingController _videoeUrlController = TextEditingController();
+  final TextEditingController _tagsController = TextEditingController();
+
   final List<Map<String, dynamic>> _cardControllers = [];
   final ImagePicker _picker = ImagePicker();
 
@@ -60,7 +62,10 @@ class _AddCardsPageState extends State<AddCardsPage> {
   }
 
   Future<void> _saveDeckAndCards() async {
-    var deckId = await _firebaseService.createDeck(_deckTitleController.text);
+    List<String> tags =
+        _tagsController.text.split('/').where((tag) => tag.isNotEmpty).toList();
+    var deckId =
+        await _firebaseService.createDeck(_deckTitleController.text, tags);
 
     // Save the Video URL to the deck
     if (_videoeUrlController.text.isNotEmpty) {
@@ -160,6 +165,7 @@ class _AddCardsPageState extends State<AddCardsPage> {
                 children: [
                   _buildDeckTitleInput(),
                   _buildVideoUrlInput(),
+                  _buildTagsInput(),
                   _buildCardsList(),
                 ],
               ),
@@ -214,6 +220,24 @@ class _AddCardsPageState extends State<AddCardsPage> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildTagsInput() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Tags', style: Theme.of(context).textTheme.headline6),
+        SizedBox(height: 8),
+        TextField(
+          controller: _tagsController,
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+            hintText: 'Enter tags (e.g., a/b/c)',
+          ),
+        ),
+        SizedBox(height: 16),
+      ],
     );
   }
 
