@@ -19,6 +19,7 @@ class Deck {
 class FirebaseService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
+  Map<String, dynamic> _originalCardsState = <String, dynamic>{};
 
   Stream<List<Map<String, dynamic>>> getDecksStream() {
     return _firestore.collection('decks').snapshots().map((snapshot) {
@@ -63,7 +64,7 @@ class FirebaseService {
         .values // Convert back to iterable
         .toList();
     deckData['cards'] = cards;
-
+    _originalCardsState = deckData;
     return deckData;
   }
 
@@ -80,37 +81,85 @@ class FirebaseService {
     }
   }
 
+  Map<String, dynamic> constructDeckUpdates(
+      String title, String videoUrl, List<String> tags) {
+    Map<String, dynamic> updates = {};
+    if (_originalCardsState['title'] != title) {
+      updates['title'] = title;
+    }
+    if (_originalCardsState['videoUrl'] != videoUrl) {
+      updates['videoUrl'] = videoUrl;
+    }
+    if (_originalCardsState['tags'] != tags) {
+      updates['tags'] = tags;
+    }
+    return updates;
+  }
+
   Future<void> updateDeck(String deckId, String title, String videoUrl,
       List<Map<String, dynamic>> cards, List<String> tags) async {
-    var batch = _firestore.batch();
+    WriteBatch batch = _firestore.batch();
+    DocumentReference deckRef = _firestore.collection('decks').doc(deckId);
 
-    var deckRef = _firestore.collection('decks').doc(deckId);
-    batch.update(deckRef, {
-      'title': title,
-      'videoUrl': videoUrl,
-      'tags': tags, // Update tags here
-    });
+    // Construct the updates map
+    Map<String, dynamic> deckUpdates =
+        constructDeckUpdates(title, videoUrl, tags);
+    if (deckUpdates.isNotEmpty) {
+      batch.update(deckRef, deckUpdates);
+    }
 
-    // Delete existing cards
+    // Handle cards
     var cardCollection = deckRef.collection('cards');
-    var existingCards = await cardCollection.get();
-    for (var doc in existingCards.docs) {
-      batch.delete(doc.reference);
+
+    // Assuming you have a way to identify new vs existing cards, e.g., by checking if they have an 'id'
+    for (var card in cards) {
+      DocumentReference cardRef;
+
+      // Find the original state of the card, if it exists
+      final originalCard = _originalCardsState['cards'].firstWhere(
+          (c) => c['id'] == card['id'],
+          orElse: () => <String, dynamic>{});
+
+      // Check if the card has been modified
+      bool isModified = (originalCard['front'] != card['front'] ||
+          originalCard['back'] != card['back'] ||
+          originalCard['imageUrl'] != card['imageUrl'] ||
+          originalCard['position'] != card['position']);
+
+      if (card.containsKey('id') && card['id'] != null && isModified) {
+        // Existing card, update
+        cardRef = cardCollection.doc(card['id']);
+        batch.update(cardRef, {
+          'front': card['front'],
+          'back': card['back'],
+          'imageUrl': card['imageUrl'],
+          'position': card['position'],
+        });
+      } else if (!card.containsKey('id') || card['id'] == null) {
+        // New card, add
+        cardRef = cardCollection.doc(); // Let Firestore generate a new ID
+        batch.set(cardRef, {
+          'front': card['front'],
+          'back': card['back'],
+          'imageUrl': card['imageUrl'],
+          'position': card['position'],
+        });
+      }
     }
 
-    // Add new cards with positions
-    for (var i = 0; i < cards.length; i++) {
-      var card = cards[i];
-      var newCardRef =
-          cardCollection.doc(); // Generating a new document reference
-      batch.set(newCardRef, {
-        'front': (card['front'] as TextEditingController).text,
-        'back': (card['back'] as TextEditingController).text,
-        'imageUrl': card['imageUrl'], // Include the card's image URL
-        'position': i, // Include the card's position
-      });
+    // Identify and delete removed cards
+    Set<String> currentCardIds =
+        Set.from(cards.map((card) => card['id'].toString()));
+    Set<String> originalCardIds = Set.from(
+        _originalCardsState['cards'].map((card) => card['id'].toString()));
+    Set<String> idsToDelete = originalCardIds.difference(currentCardIds);
+
+    for (String idToDelete in idsToDelete) {
+      DocumentReference cardRef = deckRef.collection('cards').doc(idToDelete);
+      batch.delete(cardRef);
     }
 
+    // Commit the batch operation
     await batch.commit();
   }
 

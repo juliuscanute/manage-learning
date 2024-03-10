@@ -48,6 +48,7 @@ class _EditCardsPageState extends State<EditCardsPage> {
     var fetchedCards = deckData['cards'] as List<Map<String, dynamic>>;
     _cardControllers = fetchedCards
         .map((cardData) => {
+              'id': cardData['id'], // Store ID
               'front': TextEditingController(text: cardData['front']),
               'back': TextEditingController(text: cardData['back']),
               'position': cardData['position'], // Store position
@@ -228,7 +229,15 @@ class _EditCardsPageState extends State<EditCardsPage> {
         widget.deckId,
         _deckTitleController.text,
         _videoUrlController.text,
-        _cardControllers,
+        _cardControllers
+            .map((e) => {
+                  'id': e['id'],
+                  'front': e['front'].text,
+                  'back': e['back'].text,
+                  'imageUrl': e['imageUrl'],
+                  'position': e['position'],
+                })
+            .toList(),
         tags,
       );
     }
