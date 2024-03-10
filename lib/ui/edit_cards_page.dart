@@ -219,28 +219,26 @@ class _EditCardsPageState extends State<EditCardsPage> {
           // Handle error, perhaps close the dialog and show an error message
         }
       }
-
-      List<String> tags = _tagsController.text
-          .split('/')
-          .where((tag) => tag.isNotEmpty)
-          .toList();
-
-      await _firebaseService.updateDeck(
-        widget.deckId,
-        _deckTitleController.text,
-        _videoUrlController.text,
-        _cardControllers
-            .map((e) => {
-                  'id': e['id'],
-                  'front': e['front'].text,
-                  'back': e['back'].text,
-                  'imageUrl': e['imageUrl'],
-                  'position': e['position'],
-                })
-            .toList(),
-        tags,
-      );
     }
+
+    List<String> tags =
+        _tagsController.text.split('/').where((tag) => tag.isNotEmpty).toList();
+
+    await _firebaseService.updateDeck(
+      widget.deckId,
+      _deckTitleController.text,
+      _videoUrlController.text,
+      _cardControllers
+          .map((e) => {
+                'id': e['id'],
+                'front': e['front'].text,
+                'back': e['back'].text,
+                'imageUrl': e['imageUrl'],
+                'position': e['position'],
+              })
+          .toList(),
+      tags,
+    );
 
     // Close the progress dialog
     Navigator.pop(context); // Assuming this is how you close your dialog
