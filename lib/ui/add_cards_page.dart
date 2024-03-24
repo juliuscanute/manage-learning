@@ -22,6 +22,9 @@ class _AddCardsPageState extends State<AddCardsPage> {
   final TextEditingController _deckTitleController = TextEditingController();
   final TextEditingController _videoeUrlController = TextEditingController();
   final TextEditingController _tagsController = TextEditingController();
+  final Map<String, dynamic> _mapImageController = {
+    'image': null, // Initialize image path as null
+  };
 
   final List<Map<String, dynamic>> _cardControllers = [];
   final ImagePicker _picker = ImagePicker();
@@ -73,6 +76,12 @@ class _AddCardsPageState extends State<AddCardsPage> {
           deckId, _videoeUrlController.text);
     }
 
+    final mapUrl =
+        await uploadImage(_mapImageController, deckId, 'mindmap_images');
+    if (mapUrl.isNotEmpty) {
+      await _firebaseService.updateDeckWithMapUrl(deckId, mapUrl);
+    }
+
     // For showing a linear progress indicator
     double totalUploadSteps = _cardControllers.length.toDouble();
     double currentStep = 0;
@@ -97,29 +106,7 @@ class _AddCardsPageState extends State<AddCardsPage> {
     for (var i = 0; i < _cardControllers.length; i++) {
       var controllers = _cardControllers[i];
       String imageUrl = '';
-
-      if (controllers['image'] != null) {
-        String fileName =
-            controllers['imageName']; // Assume this is set during image picking
-        try {
-          if (kIsWeb) {
-            Uint8List imageBytes = controllers['image'];
-            TaskSnapshot snapshot = await FirebaseStorage.instance
-                .ref('card_images/$deckId/$fileName')
-                .putData(imageBytes);
-            imageUrl = await snapshot.ref.getDownloadURL();
-          } else {
-            File imageFile = File(controllers['image']);
-            TaskSnapshot snapshot = await FirebaseStorage.instance
-                .ref('card_images/$deckId/${basename(imageFile.path)}')
-                .putFile(imageFile);
-            imageUrl = await snapshot.ref.getDownloadURL();
-          }
-          // Continue with saving card details
-        } catch (e) {
-          print("Error uploading image: $e");
-        }
-      }
+      imageUrl = await uploadImage(_cardControllers[i], deckId, 'card_images');
       await _firebaseService.addCard(
         deckId,
         controllers['front']!.text,
@@ -138,6 +125,35 @@ class _AddCardsPageState extends State<AddCardsPage> {
       Navigator.pop(currentContext);
       Navigator.of(currentContext).pop();
     });
+  }
+
+  Future<String> uploadImage(Map<String, dynamic> controllers, String deckId,
+      String pathPrefix) async {
+    String imageUrl = "";
+
+    if (controllers['image'] != null) {
+      String fileName =
+          controllers['imageName']; // Assume this is set during image picking
+      try {
+        if (kIsWeb) {
+          Uint8List imageBytes = controllers['image'];
+          TaskSnapshot snapshot = await FirebaseStorage.instance
+              .ref('$pathPrefix/$deckId/$fileName')
+              .putData(imageBytes);
+          imageUrl = await snapshot.ref.getDownloadURL();
+        } else {
+          File imageFile = File(controllers['image']);
+          TaskSnapshot snapshot = await FirebaseStorage.instance
+              .ref('$pathPrefix/$deckId/${basename(imageFile.path)}')
+              .putFile(imageFile);
+          imageUrl = await snapshot.ref.getDownloadURL();
+        }
+      } catch (e) {
+        print("Error uploading image: $e");
+      }
+    }
+
+    return imageUrl;
   }
 
   @override
@@ -161,10 +177,11 @@ class _AddCardsPageState extends State<AddCardsPage> {
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+                // crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _buildDeckTitleInput(),
                   _buildVideoUrlInput(),
+                  _buildImagePicker(_mapImageController, 'Pick Mind Map Image'),
                   _buildTagsInput(),
                   _buildCardsList(),
                 ],
@@ -330,8 +347,11 @@ class _AddCardsPageState extends State<AddCardsPage> {
                 ),
               ),
               SizedBox(height: 8),
-              _buildImagePicker(
-                  index), // Assuming this method builds your image picker UI
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: _buildImagePicker(
+                    _cardControllers[index], "Pick Recall Image"),
+              ), // Assuming this method builds your image picker UI
               _buildMoveButtons(index), // If you have move up/down buttons
             ],
           ),
@@ -340,18 +360,19 @@ class _AddCardsPageState extends State<AddCardsPage> {
     );
   }
 
-  Widget _buildImagePicker(int index) {
+  Widget _buildImagePicker(
+      Map<String, dynamic> imageController, String buttonText) {
     ImageProvider? imageProvider; // Mark as nullable
 
     // Check if there is an image for the current card
-    if (_cardControllers[index]['image'] != null) {
+    if (imageController['image'] != null) {
       if (kIsWeb) {
         // For web, use MemoryImage with Uint8List
-        Uint8List imageBytes = _cardControllers[index]['image'] as Uint8List;
+        Uint8List imageBytes = imageController['image'] as Uint8List;
         imageProvider = MemoryImage(imageBytes);
       } else {
         // For mobile, use FileImage with a File object
-        String imagePath = _cardControllers[index]['image'] as String;
+        String imagePath = imageController['image'] as String;
         imageProvider = FileImage(
             File(imagePath)); // Use the File class from the 'dart:io' package
       }
@@ -365,15 +386,15 @@ class _AddCardsPageState extends State<AddCardsPage> {
             decoration: BoxDecoration(
               image: DecorationImage(
                 fit: BoxFit.cover,
-                image: imageProvider!,
+                image: imageProvider,
               ),
             ),
           ),
           SizedBox(height: 8),
           ElevatedButton.icon(
-            onPressed: () => _pickImage(index),
+            onPressed: () => _pickImage(imageController),
             icon: Icon(Icons.image),
-            label: Text('Pick Recall Image'),
+            label: Text(buttonText),
           ),
         ],
       );
@@ -381,13 +402,13 @@ class _AddCardsPageState extends State<AddCardsPage> {
 
     // Return a placeholder or button if no image is available
     return ElevatedButton.icon(
-      onPressed: () => _pickImage(index),
+      onPressed: () => _pickImage(imageController),
       icon: Icon(Icons.image),
-      label: Text('Pick Recall Image'),
+      label: Text(buttonText),
     );
   }
 
-  Future<void> _pickImage(int index) async {
+  Future<void> _pickImage(Map<String, dynamic> imageController) async {
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
       // Different handling for web
@@ -396,13 +417,13 @@ class _AddCardsPageState extends State<AddCardsPage> {
         Uint8List fileBytes = await pickedFile.readAsBytes();
         String fileName = pickedFile.name;
         setState(() {
-          _cardControllers[index]['image'] = fileBytes;
-          _cardControllers[index]['imageName'] =
+          imageController['image'] = fileBytes;
+          imageController['imageName'] =
               fileName; // Store the file name separately
         });
       } else {
         setState(() {
-          _cardControllers[index]['image'] = pickedFile.path;
+          imageController['image'] = pickedFile.path;
         });
       }
     }

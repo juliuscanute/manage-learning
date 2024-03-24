@@ -30,6 +30,7 @@ class FirebaseService {
                 'videoUrl': doc.data()['videoUrl'] ?? '',
                 'tags':
                     List.from(doc.data()['tags'] ?? []), // Include tags here
+                'mapUrl': doc.data()['mapUrl'] ?? '',
               })
           .toList();
     });
@@ -47,6 +48,7 @@ class FirebaseService {
     deckData['videoUrl'] = deckSnapshot.data()?['videoUrl'] ?? '';
     deckData['tags'] =
         List.from(deckSnapshot.data()?['tags'] ?? []); // Add tags here
+    deckData['mapUrl'] = deckSnapshot.data()?['mapUrl'] ?? '';
 
     // Fetch the cards ordered by 'position'
     var cardsSnapshot =
@@ -82,7 +84,7 @@ class FirebaseService {
   }
 
   Map<String, dynamic> constructDeckUpdates(
-      String title, String videoUrl, List<String> tags) {
+      String title, String videoUrl, String mapUrl, List<String> tags) {
     Map<String, dynamic> updates = {};
     if (_originalCardsState['title'] != title) {
       updates['title'] = title;
@@ -90,20 +92,28 @@ class FirebaseService {
     if (_originalCardsState['videoUrl'] != videoUrl) {
       updates['videoUrl'] = videoUrl;
     }
+    if (_originalCardsState['mapUrl'] != mapUrl) {
+      updates['mapUrl'] = mapUrl;
+    }
     if (_originalCardsState['tags'] != tags) {
       updates['tags'] = tags;
     }
     return updates;
   }
 
-  Future<void> updateDeck(String deckId, String title, String videoUrl,
-      List<Map<String, dynamic>> cards, List<String> tags) async {
+  Future<void> updateDeck(
+      String deckId,
+      String title,
+      String videoUrl,
+      String mapUrl,
+      List<Map<String, dynamic>> cards,
+      List<String> tags) async {
     WriteBatch batch = _firestore.batch();
     DocumentReference deckRef = _firestore.collection('decks').doc(deckId);
 
     // Construct the updates map
     Map<String, dynamic> deckUpdates =
-        constructDeckUpdates(title, videoUrl, tags);
+        constructDeckUpdates(title, videoUrl, mapUrl, tags);
     if (deckUpdates.isNotEmpty) {
       batch.update(deckRef, deckUpdates);
     }
@@ -174,6 +184,17 @@ class FirebaseService {
     }
   }
 
+  Future<void> updateDeckWithMapUrl(String deckId, String mapUrl) async {
+    try {
+      await _firestore.collection('decks').doc(deckId).update({
+        'mapUrl': mapUrl,
+      });
+    } catch (e) {
+      print("Error updating deck with Map URL: $e");
+      // Handle any errors appropriately in your app context
+    }
+  }
+
   Future<void> deleteCard(String deckId, String cardId) async {
     await _firestore
         .collection('decks')
@@ -220,15 +241,6 @@ class FirebaseService {
       'imageUrl': imageUrl
     });
   }
-
-  // Future<void> deleteCard(String deckId, String cardId) async {
-  //   await _firestore
-  //       .collection('decks')
-  //       .doc(deckId)
-  //       .collection('cards')
-  //       .doc(cardId)
-  //       .delete();
-  // }
 
   Future<void> deleteImage(String? imageUrl) async {
     if (imageUrl == null || imageUrl.isEmpty) {
