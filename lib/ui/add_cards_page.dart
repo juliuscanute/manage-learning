@@ -438,6 +438,16 @@ class _AddCardsPageState extends State<AddCardsPage> {
             icon: Icon(Icons.arrow_upward),
             onPressed: () => _moveCardUp(index),
           ),
+        IconButton(
+          icon: Icon(Icons.vertical_align_top), // Icon for adding above
+          onPressed: () => _addCardAbove(index),
+          tooltip: 'Add Card Above',
+        ),
+        IconButton(
+          icon: Icon(Icons.vertical_align_bottom), // Icon for adding below
+          onPressed: () => _addCardBelow(index),
+          tooltip: 'Add Card Below',
+        ),
         if (index != _cardControllers.length - 1)
           IconButton(
             icon: Icon(Icons.arrow_downward),
@@ -445,5 +455,26 @@ class _AddCardsPageState extends State<AddCardsPage> {
           ),
       ],
     );
+  }
+
+  void _addCardAbove(int index) {
+    setState(() {
+      _cardControllers.insert(index, {
+        'front': TextEditingController(),
+        'back': TextEditingController(),
+        'image': null,
+      });
+    });
+  }
+
+  void _addCardBelow(int index) {
+    setState(() {
+      // Insert below, so add 1 to the index
+      _cardControllers.insert(index + 1, {
+        'front': TextEditingController(),
+        'back': TextEditingController(),
+        'image': null,
+      });
+    });
   }
 }

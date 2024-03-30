@@ -381,22 +381,15 @@ class _EditCardsPageState extends State<EditCardsPage> {
 
   Widget _buildCard(Map<String, dynamic> controller, int index) {
     return Card(
-      margin: const EdgeInsets.symmetric(
-          vertical: 8, horizontal: 4), // Add horizontal margin to Card
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
       child: Stack(
         children: [
           Padding(
-            padding: const EdgeInsets.only(
-                top: 16,
-                left: 16,
-                right: 16,
-                bottom: 8), // Increase padding for content
+            padding:
+                const EdgeInsets.only(top: 16, left: 16, right: 16, bottom: 8),
             child: Column(
               children: [
-                // Add spacing or a placeholder at the top to avoid overlap with the delete button
-                SizedBox(
-                    height:
-                        24), // Adjust the height as needed to ensure it doesn't overlap with delete button
+                SizedBox(height: 24),
                 TextField(
                   controller: controller['front'] as TextEditingController,
                   decoration: const InputDecoration(
@@ -413,12 +406,16 @@ class _EditCardsPageState extends State<EditCardsPage> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                _buildImagePicker(_cardControllers[index], 'Pick Recall Image'),
-                const SizedBox(
-                    height: 16), // Add some space before the move buttons
+                _buildImagePicker(controller, 'Pick Recall Image'),
+                const SizedBox(height: 16),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
+                    IconButton(
+                      icon: Icon(Icons.vertical_align_top),
+                      onPressed: () => _addCardAbove(index),
+                      tooltip: 'Add Card Above',
+                    ),
                     IconButton(
                       icon: Icon(Icons.arrow_upward),
                       onPressed:
@@ -432,6 +429,11 @@ class _EditCardsPageState extends State<EditCardsPage> {
                           : () => _moveCard(index, index + 1),
                       tooltip: 'Move Down',
                     ),
+                    IconButton(
+                      icon: Icon(Icons.vertical_align_bottom),
+                      onPressed: () => _addCardBelow(index),
+                      tooltip: 'Add Card Below',
+                    ),
                   ],
                 ),
               ],
@@ -439,8 +441,7 @@ class _EditCardsPageState extends State<EditCardsPage> {
           ),
           Positioned(
             right: 8,
-            top:
-                0, // Adjust the top position to ensure it's clearly visible and not overlapping
+            top: 0,
             child: IconButton(
               icon: Icon(Icons.delete, color: Colors.red),
               onPressed: () async {
@@ -458,5 +459,38 @@ class _EditCardsPageState extends State<EditCardsPage> {
         ],
       ),
     );
+  }
+
+  void _addCardAbove(int index) {
+    setState(() {
+      _cardControllers.insert(index, {
+        'front': TextEditingController(),
+        'back': TextEditingController(),
+        'image': null,
+        'imageUrl': '',
+        'position':
+            index, // You might need to adjust positions if you use them for ordering
+      });
+      // After adding, update positions for all cards
+      for (int i = 0; i < _cardControllers.length; i++) {
+        _cardControllers[i]['position'] = i;
+      }
+    });
+  }
+
+  void _addCardBelow(int index) {
+    setState(() {
+      _cardControllers.insert(index + 1, {
+        'front': TextEditingController(),
+        'back': TextEditingController(),
+        'image': null,
+        'imageUrl': '',
+        'position': index + 1,
+      });
+      // After adding, update positions for all cards
+      for (int i = 0; i < _cardControllers.length; i++) {
+        _cardControllers[i]['position'] = i;
+      }
+    });
   }
 }
