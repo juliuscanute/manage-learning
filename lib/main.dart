@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:manage_learning/data/firebase_service.dart';
 import 'package:manage_learning/ui/add_cards_page.dart';
+import 'package:manage_learning/ui/category_screen.dart';
 import 'package:manage_learning/ui/decks_page.dart';
 import 'package:manage_learning/ui/edit_cards_page.dart';
 import 'package:manage_learning/ui/login_screen.dart';
@@ -65,25 +66,30 @@ class MyApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         title: 'Welcome to John Louis academy',
         initialRoute: '/',
-          onGenerateRoute: (settings) {
-            return PageRouteBuilder(
+        onGenerateRoute: (settings) {
+          return PageRouteBuilder(
               pageBuilder: (context, animation, secondaryAnimation) {
                 if (settings.name == '/') {
                   return const LoginScreen();
                 } else if (settings.name == '/decks') {
-                  return  const DecksPage();
-                }  else if (settings.name == '/addcards') {
+                  return const DecksPage();
+                } else if (settings.name == '/addcards') {
                   return AddCardsPage();
                 } else if (settings.name == '/editcards') {
                   return EditCardsPage(deckId: settings.arguments as String);
+                } else if (settings.name == '/category-screen') {
+                  final args = settings.arguments as Map<String, dynamic>;
+                  final decks = args['decks'] as List<Map<String, dynamic>>;
+                  final categoryList = args['categoryList'] as List<String>;
+                  return CategoryScreen(
+                      categoryList: categoryList, decks: decks);
                 }
                 return Container();
               },
               transitionDuration: Duration.zero,
-              reverseTransitionDuration: Duration.zero
-            );
-          },
-        ),
+              reverseTransitionDuration: Duration.zero);
+        },
+      ),
     );
   }
 }
