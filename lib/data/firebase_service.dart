@@ -96,6 +96,23 @@ class FirebaseService {
       // Add the new deck to the 'decks' collection
       var newDeckRef = await _firestore.collection('decks').add(newDeck);
 
+      // Fetch the cards of the original deck
+      var cardsSnapshot = await _firestore
+          .collection('decks')
+          .doc(deck['id'])
+          .collection('cards')
+          .get();
+
+      // Duplicate each card and add it to the new deck
+      for (var cardDoc in cardsSnapshot.docs) {
+        var card = cardDoc.data();
+        await _firestore
+            .collection('decks')
+            .doc(newDeckRef.id)
+            .collection('cards')
+            .add(card);
+      }
+
       // Return the ID of the newly created deck
       return newDeckRef.id;
     } catch (e) {
