@@ -87,6 +87,23 @@ class FirebaseService {
     }
   }
 
+  Future<String> duplicateDeck(Map<String, dynamic> deck) async {
+    try {
+      // Create a new deck that is a copy of the current deck, but with a different title
+      Map<String, dynamic> newDeck = Map.from(deck);
+      newDeck['title'] = newDeck['title'] + ' (Copy)';
+
+      // Add the new deck to the 'decks' collection
+      var newDeckRef = await _firestore.collection('decks').add(newDeck);
+
+      // Return the ID of the newly created deck
+      return newDeckRef.id;
+    } catch (e) {
+      print("Error duplicating deck: $e");
+      return ''; // Return an empty string or handle the error as needed
+    }
+  }
+
   Map<String, dynamic> constructDeckUpdates(String title, String videoUrl,
       String mapUrl, bool exactMatch, List<String> tags) {
     Map<String, dynamic> updates = {};

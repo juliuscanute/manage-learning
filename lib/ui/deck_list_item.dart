@@ -35,6 +35,12 @@ class _DeckListItemState extends State<DeckListItem> {
         icon: const Icon(Icons.delete),
         onPressed: () => _firebaseService.deleteDeck(widget.deck['id']),
       ),
+      IconButton(
+        icon: const Icon(Icons.copy),
+        onPressed: () {
+          _duplicateDeck();
+        },
+      ),
     ];
 
     // Conditionally add the play icon if videoUrl is not empty
@@ -69,5 +75,19 @@ class _DeckListItemState extends State<DeckListItem> {
         ),
       ),
     );
+  }
+
+  void _duplicateDeck() {
+    _firebaseService.duplicateDeck(widget.deck).then((newDeckId) {
+      if (newDeckId.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Deck duplicated')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error duplicating deck')),
+        );
+      }
+    });
   }
 }
