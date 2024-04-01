@@ -28,6 +28,7 @@ class FirebaseService {
                 'id': doc.id,
                 'title': doc.data()['title'] ?? '',
                 'videoUrl': doc.data()['videoUrl'] ?? '',
+                'exactMatch': doc.data()['exactMatch'] ?? true,
                 'tags':
                     List.from(doc.data()['tags'] ?? []), // Include tags here
                 'mapUrl': doc.data()['mapUrl'] ?? '',
@@ -49,6 +50,7 @@ class FirebaseService {
     deckData['tags'] =
         List.from(deckSnapshot.data()?['tags'] ?? []); // Add tags here
     deckData['mapUrl'] = deckSnapshot.data()?['mapUrl'] ?? '';
+    deckData['exactMatch'] = deckSnapshot.data()?['exactMatch'] ?? true;
 
     // Fetch the cards ordered by 'position'
     var cardsSnapshot =
@@ -70,11 +72,13 @@ class FirebaseService {
     return deckData;
   }
 
-  Future<String> createDeck(String title, List<String> tags) async {
+  Future<String> createDeck(
+      String title, List<String> tags, bool exactMatch) async {
     try {
       var newDeckRef = await _firestore.collection('decks').add({
         'title': title,
         'tags': tags, // Add tags here
+        'exactMatch': exactMatch,
       });
       return newDeckRef.id; // Return the newly created deck ID
     } catch (e) {
@@ -83,8 +87,8 @@ class FirebaseService {
     }
   }
 
-  Map<String, dynamic> constructDeckUpdates(
-      String title, String videoUrl, String mapUrl, List<String> tags) {
+  Map<String, dynamic> constructDeckUpdates(String title, String videoUrl,
+      String mapUrl, bool exactMatch, List<String> tags) {
     Map<String, dynamic> updates = {};
     if (_originalCardsState['title'] != title) {
       updates['title'] = title;
@@ -98,6 +102,9 @@ class FirebaseService {
     if (_originalCardsState['tags'] != tags) {
       updates['tags'] = tags;
     }
+    if (_originalCardsState['exactMatch'] != exactMatch) {
+      updates['exactMatch'] = exactMatch;
+    }
     return updates;
   }
 
@@ -106,6 +113,7 @@ class FirebaseService {
       String title,
       String videoUrl,
       String mapUrl,
+      bool exactMatch,
       List<Map<String, dynamic>> cards,
       List<String> tags) async {
     WriteBatch batch = _firestore.batch();
@@ -113,7 +121,7 @@ class FirebaseService {
 
     // Construct the updates map
     Map<String, dynamic> deckUpdates =
-        constructDeckUpdates(title, videoUrl, mapUrl, tags);
+        constructDeckUpdates(title, videoUrl, mapUrl, exactMatch, tags);
     if (deckUpdates.isNotEmpty) {
       batch.update(deckRef, deckUpdates);
     }

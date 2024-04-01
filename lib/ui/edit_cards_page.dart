@@ -30,6 +30,7 @@ class _EditCardsPageState extends State<EditCardsPage> {
 
   late List<Map<String, dynamic>> _cardControllers = []; // Include positioning
   bool _isLoading = true;
+  bool _isEvaluatorStrict = true;
 
   @override
   void initState() {
@@ -45,7 +46,9 @@ class _EditCardsPageState extends State<EditCardsPage> {
     _videoUrlController.text =
         deckData['videoUrl'] ?? ''; // Default to empty if not found
     _mindmapImageController['imageUrl'] = deckData['mapUrl'] ?? '';
-
+    setState(() {
+      _isEvaluatorStrict = deckData['exactMatch'] ?? true;
+    });
     List<String> tags = List.from(deckData['tags'] ?? []);
     _tagsController.text = tags.join('/');
 
@@ -240,6 +243,7 @@ class _EditCardsPageState extends State<EditCardsPage> {
       _deckTitleController.text,
       _videoUrlController.text,
       _mindmapImageController['imageUrl'],
+      _isEvaluatorStrict,
       _cardControllers
           .map((e) => {
                 'id': e['id'],
@@ -293,89 +297,128 @@ class _EditCardsPageState extends State<EditCardsPage> {
                       padding: const EdgeInsets.all(16.0),
                       child: Column(
                         children: [
-                          Text('Deck Title',
-                              style: Theme.of(context).textTheme.headline6),
+                          _buildDeckTitle(),
                           SizedBox(height: 8),
-                          TextField(
-                            controller: _deckTitleController,
-                            decoration: const InputDecoration(
-                              border: OutlineInputBorder(),
-                              hintText: 'Enter deck title',
-                            ),
-                          ),
+                          _buildDeckTitleInput(),
                           SizedBox(height: 16),
                           _buildVideoUrlInput(),
-                          Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: _buildImagePicker(
-                                _mindmapImageController, 'Pick Mindmap Image'),
-                          ),
-                          _buildTagsInput(), // Include the tags input here
-                          Text('Cards',
-                              style: Theme.of(context).textTheme.headline6),
-                          ..._cardControllers
-                              .asMap()
-                              .entries
-                              .map(
-                                  (entry) => _buildCard(entry.value, entry.key))
-                              .toList(),
+                          _buildEvaluatorStrictnessSwitch(),
+                          _buildMindmapImagePicker(),
+                          _buildTagsInput(),
+                          _buildCardsTitle(),
+                          _buildCardsList(),
                         ],
                       ),
                     ),
                   ),
           ),
-          Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.5),
-                  spreadRadius: 5,
-                  blurRadius: 7,
-                  offset: Offset(0, 3),
+          _buildButtonRow(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEvaluatorStrictnessSwitch() {
+    return Row(
+      children: [
+        Text(
+            'Do you want the evaluator to be strict? ${_isEvaluatorStrict ? 'YES' : 'NO'}'),
+        Switch(
+          value: _isEvaluatorStrict,
+          onChanged: (bool value) {
+            setState(() {
+              _isEvaluatorStrict = value;
+            });
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildButtonRow() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.5),
+            spreadRadius: 5,
+            blurRadius: 7,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: ElevatedButton(
+                onPressed: _addCardController,
+                child: Text('Add Another Card'),
+                style: ElevatedButton.styleFrom(
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20)),
                 ),
-              ],
+              ),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: 8.0),
-                    child: ElevatedButton(
-                      onPressed: _addCardController,
-                      child: Text('Add Another Card'),
-                      style: ElevatedButton.styleFrom(
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20)),
-                      ),
-                    ),
-                  ),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(left: 8.0),
+              child: ElevatedButton(
+                onPressed: _saveDeckAndCards,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20)),
                 ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 8.0),
-                    child: ElevatedButton(
-                      onPressed: _saveDeckAndCards,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20)),
-                      ),
-                      child: Text('Save Deck and Cards'),
-                    ),
-                  ),
-                ),
-              ],
+                child: Text('Save Deck and Cards'),
+              ),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildDeckTitle() {
+    return Text('Deck Title', style: Theme.of(context).textTheme.headline6);
+  }
+
+  Widget _buildDeckTitleInput() {
+    return TextField(
+      controller: _deckTitleController,
+      decoration: const InputDecoration(
+        border: OutlineInputBorder(),
+        hintText: 'Enter deck title',
+      ),
+    );
+  }
+
+  Widget _buildMindmapImagePicker() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: _buildImagePicker(_mindmapImageController, 'Pick Mindmap Image'),
+    );
+  }
+
+  Widget _buildCardsTitle() {
+    return Text('Cards', style: Theme.of(context).textTheme.headline6);
+  }
+
+  Widget _buildCardsList() {
+    return Column(
+      children: _cardControllers
+          .asMap()
+          .entries
+          .map((entry) => _buildCard(entry.value, entry.key))
+          .toList(),
     );
   }
 

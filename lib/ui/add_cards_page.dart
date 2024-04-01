@@ -25,6 +25,7 @@ class _AddCardsPageState extends State<AddCardsPage> {
   final Map<String, dynamic> _mapImageController = {
     'image': null, // Initialize image path as null
   };
+  bool _isEvaluatorStrict = true;
 
   final List<Map<String, dynamic>> _cardControllers = [];
   final ImagePicker _picker = ImagePicker();
@@ -67,8 +68,8 @@ class _AddCardsPageState extends State<AddCardsPage> {
   Future<void> _saveDeckAndCards() async {
     List<String> tags =
         _tagsController.text.split('/').where((tag) => tag.isNotEmpty).toList();
-    var deckId =
-        await _firebaseService.createDeck(_deckTitleController.text, tags);
+    var deckId = await _firebaseService.createDeck(
+        _deckTitleController.text, tags, _isEvaluatorStrict);
 
     // Save the Video URL to the deck
     if (_videoeUrlController.text.isNotEmpty) {
@@ -181,6 +182,7 @@ class _AddCardsPageState extends State<AddCardsPage> {
                 children: [
                   _buildDeckTitleInput(),
                   _buildVideoUrlInput(),
+                  _buildEvaluatorStrictnessSwitch(),
                   _buildImagePicker(_mapImageController, 'Pick Mind Map Image'),
                   _buildTagsInput(),
                   _buildCardsList(),
@@ -237,6 +239,23 @@ class _AddCardsPageState extends State<AddCardsPage> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildEvaluatorStrictnessSwitch() {
+    return Row(
+      children: [
+        Text(
+            'Do you want the evaluator to be strict? ${_isEvaluatorStrict ? 'YES' : 'NO'}'),
+        Switch(
+          value: _isEvaluatorStrict,
+          onChanged: (bool value) {
+            setState(() {
+              _isEvaluatorStrict = value;
+            });
+          },
+        ),
+      ],
     );
   }
 
