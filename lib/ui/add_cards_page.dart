@@ -171,7 +171,9 @@ class _AddCardsPageState extends State<AddCardsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Add New Deck and Cards')),
+      appBar: AppBar(
+        title: const Text('Add New Deck and Cards'),
+      ),
       body: Column(
         children: [
           Expanded(

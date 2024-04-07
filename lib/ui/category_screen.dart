@@ -1,5 +1,6 @@
 import 'dart:collection';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:manage_learning/data/firebase_service.dart';
 import 'package:manage_learning/ui/category_card.dart';
@@ -30,6 +31,15 @@ class _CategoryScreenState extends State<CategoryScreen> {
     return Scaffold(
         appBar: AppBar(
           title: Text(widget.categoryList.last),
+          actions: [
+            IconButton(
+              icon: Icon(Icons.logout),
+              onPressed: () async {
+                await FirebaseAuth.instance.signOut();
+                Navigator.of(context).pushReplacementNamed('/login');
+              },
+            ),
+          ],
         ),
         body: StreamBuilder<List<Map<String, dynamic>>>(
           stream: _firebaseService.getDecksStream(),
