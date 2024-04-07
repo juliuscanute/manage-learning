@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -12,7 +13,7 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 void main() async {
-  initializeFirebase();
+  await initializeFirebase();
   runApp(const MyApp());
 }
 
@@ -32,7 +33,7 @@ Future<Map<String, dynamic>> loadConfig() async {
   return {};
 }
 
-void initializeFirebase() async {
+Future<bool> initializeFirebase() async {
   await dotenv.load(fileName: ".env", isOptional: true);
   final config = await loadConfig();
   await Firebase.initializeApp(
@@ -49,6 +50,7 @@ void initializeFirebase() async {
           dotenv.env['FIREBASE_MEASUREMENT_ID'] ?? config['measurementId'],
     ),
   );
+  return true;
 }
 
 class MyApp extends StatelessWidget {
@@ -65,11 +67,21 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Welcome to John Louis academy',
-        initialRoute: '/',
+        home: StreamBuilder<User?>(
+          stream: FirebaseAuth.instance.authStateChanges(),
+          builder: (BuildContext context, AsyncSnapshot<User?> snapshot) {
+            if (snapshot.connectionState == ConnectionState.active) {
+              return snapshot.data != null
+                  ? const DecksPage()
+                  : const LoginScreen();
+            }
+            return const CircularProgressIndicator();
+          },
+        ),
         onGenerateRoute: (settings) {
           return PageRouteBuilder(
               pageBuilder: (context, animation, secondaryAnimation) {
-                if (settings.name == '/') {
+                if (settings.name == '/login') {
                   return const LoginScreen();
                 } else if (settings.name == '/decks') {
                   return const DecksPage();
