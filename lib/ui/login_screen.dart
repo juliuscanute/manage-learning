@@ -16,7 +16,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    _checkSignIn();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkSignIn());
   }
 
   void _checkSignIn() async {
