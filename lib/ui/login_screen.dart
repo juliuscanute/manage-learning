@@ -14,6 +14,19 @@ class _LoginScreenState extends State<LoginScreen> {
   bool isLoading = false;
 
   @override
+  void initState() {
+    super.initState();
+    _checkSignIn();
+  }
+
+  void _checkSignIn() async {
+    var user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      Navigator.of(context).pushReplacementNamed('/decks');
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     // Determine screen size
     var screenSize = MediaQuery.of(context).size;
