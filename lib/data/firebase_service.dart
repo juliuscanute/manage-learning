@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:path/path.dart' as path;
 
 class Deck {
   final String id;
@@ -89,23 +91,26 @@ class FirebaseService {
 
   Future<String> duplicateDeck(Map<String, dynamic> deck) async {
     try {
-      // Create a new deck that is a copy of the current deck, but with a different title
       Map<String, dynamic> newDeck = Map.from(deck);
       newDeck['title'] = newDeck['title'] + ' (Copy)';
+      var newDeckRef = _firestore.collection('decks').doc();
 
-      // Add the new deck to the 'decks' collection
-      var newDeckRef = await _firestore.collection('decks').add(newDeck);
+      newDeck = await duplicateImageInData(
+          newDeck, 'mapUrl', newDeckRef, 'mindmap_images');
 
-      // Fetch the cards of the original deck
+      await newDeckRef.set(newDeck);
+
       var cardsSnapshot = await _firestore
           .collection('decks')
           .doc(deck['id'])
           .collection('cards')
           .get();
 
-      // Duplicate each card and add it to the new deck
       for (var cardDoc in cardsSnapshot.docs) {
         var card = cardDoc.data();
+
+        card = await duplicateImageInData(
+            card, 'imageUrl', newDeckRef, 'card_images');
         await _firestore
             .collection('decks')
             .doc(newDeckRef.id)
@@ -113,12 +118,43 @@ class FirebaseService {
             .add(card);
       }
 
-      // Return the ID of the newly created deck
       return newDeckRef.id;
     } catch (e) {
       print("Error duplicating deck: $e");
-      return ''; // Return an empty string or handle the error as needed
+      return '';
     }
+  }
+
+  Future<Map<String, dynamic>> duplicateImageInData(Map<String, dynamic> data,
+      String imageUrlKey, DocumentReference newDocRef, String imagePath) async {
+    // Check if imageUrl is not null or empty
+    if (data[imageUrlKey] != null && data[imageUrlKey].isNotEmpty) {
+      // Get the URL of the new image
+      var newImageUrl =
+          await duplicateImage(data[imageUrlKey], newDocRef, imagePath);
+
+      // Update the imageUrl in the data
+      data[imageUrlKey] = newImageUrl;
+    }
+    return data;
+  }
+
+  Future<String> duplicateImage(
+      String imageUrl, DocumentReference newDeckRef, String pathPrefix) async {
+    // Download the image
+    var response = await http.get(Uri.parse(imageUrl));
+    var imageData = response.bodyBytes;
+
+    // Upload the image to a new location
+    var newImageRef = FirebaseStorage.instance
+        .ref()
+        .child('$pathPrefix/${newDeckRef.id}/${path.basename(imageUrl)}');
+    await newImageRef.putData(imageData);
+
+    // Get the URL of the new image
+    var newImageUrl = await newImageRef.getDownloadURL();
+
+    return newImageUrl;
   }
 
   Map<String, dynamic> constructDeckUpdates(String title, String videoUrl,

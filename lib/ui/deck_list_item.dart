@@ -37,8 +37,8 @@ class _DeckListItemState extends State<DeckListItem> {
       ),
       IconButton(
         icon: const Icon(Icons.copy),
-        onPressed: () {
-          _duplicateDeck();
+        onPressed: () async {
+          await _duplicateDeck();
         },
       ),
     ];
@@ -77,17 +77,33 @@ class _DeckListItemState extends State<DeckListItem> {
     );
   }
 
-  void _duplicateDeck() {
-    _firebaseService.duplicateDeck(widget.deck).then((newDeckId) {
-      if (newDeckId.isNotEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Deck duplicated')),
+  Future<void> _duplicateDeck() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return FutureBuilder<String>(
+          future: _firebaseService.duplicateDeck(widget.deck),
+          builder: (BuildContext context, AsyncSnapshot<String> snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const AlertDialog(
+                content: Row(
+                  children: [
+                    CircularProgressIndicator(),
+                    Padding(
+                      padding: EdgeInsets.only(left: 10),
+                      child: Text('Duplicating deck...'),
+                    ),
+                  ],
+                ),
+              );
+            } else {
+              Navigator.of(context).pop();
+              return Container();
+            }
+          },
         );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error duplicating deck')),
-        );
-      }
-    });
+      },
+    );
   }
 }
