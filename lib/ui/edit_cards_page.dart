@@ -184,12 +184,14 @@ class _EditCardsPageState extends State<EditCardsPage> {
       String fileName = controller['imageName'];
       var image = controller['image'];
 
+      // Delete the old image
+      await _firebaseService.deleteImage(controller['imageUrl']);
+
       if (kIsWeb) {
         Uint8List imageBytes = image as Uint8List;
         TaskSnapshot snapshot = await FirebaseStorage.instance
             .ref('$pathPrefix/${widget.deckId}/$fileName')
             .putData(imageBytes);
-        await _firebaseService.deleteImage(controller['imageUrl']);
         String newImageUrl = await snapshot.ref.getDownloadURL();
         controller['imageUrl'] = newImageUrl; // Update with new image URL
       } else {
@@ -197,7 +199,6 @@ class _EditCardsPageState extends State<EditCardsPage> {
         TaskSnapshot snapshot = await FirebaseStorage.instance
             .ref('$pathPrefix/${widget.deckId}/${basename(imageFile.path)}')
             .putFile(imageFile);
-        await _firebaseService.deleteImage(controller['imageUrl']);
         String newImageUrl = await snapshot.ref.getDownloadURL();
         controller['imageUrl'] = newImageUrl;
       }
