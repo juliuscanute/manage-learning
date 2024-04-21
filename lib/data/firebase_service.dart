@@ -53,6 +53,8 @@ class FirebaseService {
         List.from(deckSnapshot.data()?['tags'] ?? []); // Add tags here
     deckData['mapUrl'] = deckSnapshot.data()?['mapUrl'] ?? '';
     deckData['exactMatch'] = deckSnapshot.data()?['exactMatch'] ?? true;
+    deckData['isPublic'] =
+        deckSnapshot.data()?['isPublic'] ?? false; // Add isPublic here
 
     // Fetch the cards ordered by 'position'
     var cardsSnapshot =
@@ -75,17 +77,18 @@ class FirebaseService {
   }
 
   Future<String> createDeck(
-      String title, List<String> tags, bool exactMatch) async {
+      String title, List<String> tags, bool exactMatch, bool isPublic) async {
     try {
       var newDeckRef = await _firestore.collection('decks').add({
         'title': title,
-        'tags': tags, // Add tags here
+        'tags': tags,
         'exactMatch': exactMatch,
+        'isPublic': isPublic, // Add isPublic here
       });
-      return newDeckRef.id; // Return the newly created deck ID
+      return newDeckRef.id;
     } catch (e) {
       print("Error creating deck: $e");
-      return ''; // Return an empty string or handle the error as needed
+      return '';
     }
   }
 
@@ -158,7 +161,7 @@ class FirebaseService {
   }
 
   Map<String, dynamic> constructDeckUpdates(String title, String videoUrl,
-      String mapUrl, bool exactMatch, List<String> tags) {
+      String mapUrl, bool exactMatch, List<String> tags, bool isPublic) {
     Map<String, dynamic> updates = {};
     if (_originalCardsState['title'] != title) {
       updates['title'] = title;
@@ -175,6 +178,9 @@ class FirebaseService {
     if (_originalCardsState['exactMatch'] != exactMatch) {
       updates['exactMatch'] = exactMatch;
     }
+    if (_originalCardsState['isPublic'] != isPublic) {
+      updates['isPublic'] = isPublic;
+    }
     return updates;
   }
 
@@ -185,13 +191,15 @@ class FirebaseService {
       String mapUrl,
       bool exactMatch,
       List<Map<String, dynamic>> cards,
-      List<String> tags) async {
+      List<String> tags,
+      bool isPublic) async {
     WriteBatch batch = _firestore.batch();
     DocumentReference deckRef = _firestore.collection('decks').doc(deckId);
 
     // Construct the updates map
-    Map<String, dynamic> deckUpdates =
-        constructDeckUpdates(title, videoUrl, mapUrl, exactMatch, tags);
+    Map<String, dynamic> deckUpdates = constructDeckUpdates(
+        title, videoUrl, mapUrl, exactMatch, tags, isPublic);
+    ;
     if (deckUpdates.isNotEmpty) {
       batch.update(deckRef, deckUpdates);
     }

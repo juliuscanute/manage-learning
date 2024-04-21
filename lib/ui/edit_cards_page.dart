@@ -31,6 +31,7 @@ class _EditCardsPageState extends State<EditCardsPage> {
   late List<Map<String, dynamic>> _cardControllers = []; // Include positioning
   bool _isLoading = true;
   bool _isEvaluatorStrict = true;
+  bool _isPublic = false;
 
   @override
   void initState() {
@@ -48,6 +49,7 @@ class _EditCardsPageState extends State<EditCardsPage> {
     _mindmapImageController['imageUrl'] = deckData['mapUrl'] ?? '';
     setState(() {
       _isEvaluatorStrict = deckData['exactMatch'] ?? true;
+      _isPublic = deckData['isPublic'] ?? false;
     });
     List<String> tags = List.from(deckData['tags'] ?? []);
     _tagsController.text = tags.join('/');
@@ -78,6 +80,22 @@ class _EditCardsPageState extends State<EditCardsPage> {
         _cardControllers[i]['position'] = i;
       }
     });
+  }
+
+  Widget _buildPublicSwitch() {
+    return Row(
+      children: [
+        Text('Is it public? ${_isPublic ? 'Yes' : 'No'}'),
+        Switch(
+          value: _isPublic,
+          onChanged: (bool value) {
+            setState(() {
+              _isPublic = value;
+            });
+          },
+        ),
+      ],
+    );
   }
 
   Widget _buildTagsInput() {
@@ -255,6 +273,7 @@ class _EditCardsPageState extends State<EditCardsPage> {
               })
           .toList(),
       tags,
+      _isPublic,
     );
 
     // Close the progress dialog
@@ -304,6 +323,7 @@ class _EditCardsPageState extends State<EditCardsPage> {
                           SizedBox(height: 16),
                           _buildVideoUrlInput(),
                           _buildEvaluatorStrictnessSwitch(),
+                          _buildPublicSwitch(),
                           _buildMindmapImagePicker(),
                           _buildTagsInput(),
                           _buildCardsTitle(),

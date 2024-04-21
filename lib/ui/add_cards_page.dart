@@ -26,6 +26,7 @@ class _AddCardsPageState extends State<AddCardsPage> {
     'image': null, // Initialize image path as null
   };
   bool _isEvaluatorStrict = true;
+  bool _isPublic = false;
 
   final List<Map<String, dynamic>> _cardControllers = [];
   final ImagePicker _picker = ImagePicker();
@@ -69,7 +70,7 @@ class _AddCardsPageState extends State<AddCardsPage> {
     List<String> tags =
         _tagsController.text.split('/').where((tag) => tag.isNotEmpty).toList();
     var deckId = await _firebaseService.createDeck(
-        _deckTitleController.text, tags, _isEvaluatorStrict);
+        _deckTitleController.text, tags, _isEvaluatorStrict, _isPublic);
 
     // Save the Video URL to the deck
     if (_videoeUrlController.text.isNotEmpty) {
@@ -185,6 +186,7 @@ class _AddCardsPageState extends State<AddCardsPage> {
                   _buildDeckTitleInput(),
                   _buildVideoUrlInput(),
                   _buildEvaluatorStrictnessSwitch(),
+                  _buildPublicSwitch(),
                   _buildImagePicker(_mapImageController, 'Pick Mind Map Image'),
                   _buildTagsInput(),
                   _buildCardsList(),
@@ -241,6 +243,22 @@ class _AddCardsPageState extends State<AddCardsPage> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildPublicSwitch() {
+    return Row(
+      children: [
+        Text('Is it public? ${_isPublic ? 'Yes' : 'No'}'),
+        Switch(
+          value: _isPublic,
+          onChanged: (bool value) {
+            setState(() {
+              _isPublic = value;
+            });
+          },
+        ),
+      ],
     );
   }
 
