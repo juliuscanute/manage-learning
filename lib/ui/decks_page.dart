@@ -35,6 +35,12 @@ class _DecksPageWidgetState extends State<DecksPage> {
         title: const Text('Decks'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.lightbulb_outline),
+            onPressed: () {
+              Navigator.of(context).pushNamed('/smart-deck');
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
               await FirebaseAuth.instance.signOut();

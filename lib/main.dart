@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:manage_learning/data/backend_service.dart';
 import 'package:manage_learning/data/firebase_service.dart';
 import 'package:manage_learning/ui/add_cards_page.dart';
 import 'package:manage_learning/ui/category_screen.dart';
@@ -10,6 +11,7 @@ import 'package:manage_learning/ui/edit_cards_page.dart';
 import 'package:manage_learning/ui/login_screen.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:manage_learning/ui/smart_cards_page.dart';
 import 'package:provider/provider.dart';
 
 void main() async {
@@ -63,6 +65,9 @@ class MyApp extends StatelessWidget {
         Provider<FirebaseService>(
           create: (_) => FirebaseService(),
         ),
+        Provider<BackendService>(
+          create: (_) => BackendService(),
+        ),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -95,6 +100,8 @@ class MyApp extends StatelessWidget {
                   final categoryList = args['categoryList'] as List<String>;
                   return CategoryScreen(
                       categoryList: categoryList, decks: decks);
+                } else if (settings.name == '/smart-deck') {
+                  return SmartCardPage();
                 }
                 return Container();
               },
