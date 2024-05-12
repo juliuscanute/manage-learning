@@ -41,11 +41,8 @@ class BackendService {
 
       // Return the response from the API
       final responseJson = jsonDecode(response.body);
-      final innerJsonString = responseJson['response']
-          as String; // This gets the JSON string from the 'response' key
-      final innerJson = jsonDecode(
-          innerJsonString); // Decode the JSON string to get the actual JSON object
-      return FlashcardResponse.fromJson(innerJson);
+
+      return FlashcardResponse.fromJson(responseJson);
     } catch (e) {
       throw Exception('Error occurred: $e');
     }
