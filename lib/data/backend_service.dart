@@ -36,11 +36,16 @@ class BackendService {
       final body = jsonEncode({
         'body': pdfBase64,
       });
+      // Send the POST request using http.post
       final response =
           await http.post(apiEndpoint, headers: headers, body: body);
 
-      // Return the response from the API
-      final responseJson = jsonDecode(response.body);
+      // Parse the outer JSON to get the 'response' field
+      final outerJson = jsonDecode(response.body);
+      final responseString = outerJson['response'] as String;
+
+      // Parse the 'response' field to get the actual data
+      final responseJson = jsonDecode(responseString);
 
       return FlashcardResponse.fromJson(responseJson);
     } catch (e) {
