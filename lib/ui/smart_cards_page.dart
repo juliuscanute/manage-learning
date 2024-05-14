@@ -373,7 +373,7 @@ class _SmartCardPageState extends State<SmartCardPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Tags', style: Theme.of(context).textTheme.headline6),
+        Text('Tags', style: Theme.of(context).textTheme.headlineSmall),
         SizedBox(height: 8),
         TextField(
           controller: _tagsController,
@@ -391,7 +391,7 @@ class _SmartCardPageState extends State<SmartCardPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Video URL', style: Theme.of(context).textTheme.headline6),
+        Text('Video URL', style: Theme.of(context).textTheme.headlineSmall),
         SizedBox(height: 8),
         TextField(
           controller: _videoeUrlController,
@@ -409,7 +409,7 @@ class _SmartCardPageState extends State<SmartCardPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Deck Title', style: Theme.of(context).textTheme.headline6),
+        Text('Deck Title', style: Theme.of(context).textTheme.headlineSmall),
         SizedBox(height: 8),
         TextField(
           controller: _deckTitleController,
@@ -427,7 +427,7 @@ class _SmartCardPageState extends State<SmartCardPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Cards', style: Theme.of(context).textTheme.headline6),
+        Text('Cards', style: Theme.of(context).textTheme.headlineSmall),
         for (int i = 0; i < _cardControllers.length; i++) _buildCardItem(i),
       ],
     );
@@ -448,7 +448,7 @@ class _SmartCardPageState extends State<SmartCardPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text('Card ${index + 1}',
-                      style: Theme.of(context).textTheme.headline6),
+                      style: Theme.of(context).textTheme.headlineSmall),
                   IconButton(
                     icon: Icon(Icons.delete, color: Colors.red),
                     onPressed: () => setState(() {

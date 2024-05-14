@@ -409,7 +409,7 @@ class _EditCardsPageState extends State<EditCardsPage> {
   }
 
   Widget _buildDeckTitle() {
-    return Text('Deck Title', style: Theme.of(context).textTheme.headline6);
+    return Text('Deck Title', style: Theme.of(context).textTheme.headlineSmall);
   }
 
   Widget _buildDeckTitleInput() {
@@ -430,7 +430,7 @@ class _EditCardsPageState extends State<EditCardsPage> {
   }
 
   Widget _buildCardsTitle() {
-    return Text('Cards', style: Theme.of(context).textTheme.headline6);
+    return Text('Cards', style: Theme.of(context).textTheme.headlineSmall);
   }
 
   Widget _buildCardsList() {
