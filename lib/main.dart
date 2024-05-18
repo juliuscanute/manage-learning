@@ -2,7 +2,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:manage_learning/data/backend_service.dart';
 import 'package:manage_learning/data/firebase_service.dart';
 import 'package:manage_learning/ui/add_cards_page.dart';
 import 'package:manage_learning/ui/category_screen.dart';
@@ -64,10 +63,7 @@ class MyApp extends StatelessWidget {
       providers: [
         Provider<FirebaseService>(
           create: (_) => FirebaseService(),
-        ),
-        Provider<BackendService>(
-          create: (_) => BackendService(),
-        ),
+        )
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,

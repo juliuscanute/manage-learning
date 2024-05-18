@@ -2,7 +2,6 @@
 
 import 'dart:io';
 
-import 'package:manage_learning/data/backend_service.dart';
 import 'package:path/path.dart' hide context;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -12,7 +11,7 @@ import 'package:firebase_storage/firebase_storage.dart'; // For uploading images
 // Conditional import for handling files
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:file_picker/file_picker.dart';
+import 'dart:convert';
 
 class SmartCardPage extends StatefulWidget {
   @override
@@ -20,12 +19,11 @@ class SmartCardPage extends StatefulWidget {
 }
 
 class _SmartCardPageState extends State<SmartCardPage> {
-  PlatformFile? _selectedFile;
   late FirebaseService _firebaseService;
-  late BackendService _backendService;
   final TextEditingController _deckTitleController = TextEditingController();
   final TextEditingController _videoeUrlController = TextEditingController();
   final TextEditingController _tagsController = TextEditingController();
+  final TextEditingController _jsonController = TextEditingController();
   final Map<String, dynamic> _mapImageController = {
     'image': null, // Initialize image path as null
   };
@@ -39,53 +37,7 @@ class _SmartCardPageState extends State<SmartCardPage> {
   void initState() {
     super.initState();
     _firebaseService = Provider.of<FirebaseService>(context, listen: false);
-    _backendService = Provider.of<BackendService>(context, listen: false);
     _addCardController();
-  }
-
-  void _analyzeFile() async {
-    // Show the dialog
-    showDialog(
-      context: context,
-      barrierDismissible: false, // Prevent dialog from closing
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Analyzing File...'),
-          content: StatefulBuilder(
-            builder: (context, setState) => const SizedBox(
-              width: 200, // Adjust the width as needed
-              child: LinearProgressIndicator(),
-            ),
-          ),
-        );
-      },
-    );
-
-    try {
-      FlashcardResponse _flashcardResponse =
-          await _backendService.analyzeFile(_selectedFile!);
-      setState(() {
-        _deckTitleController.text = _flashcardResponse.title;
-        _cardControllers.clear();
-        for (var flashcard in _flashcardResponse.flashcards) {
-          _cardControllers.add({
-            'front': TextEditingController(text: flashcard.front),
-            'back': TextEditingController(text: flashcard.back),
-            'image': null,
-          });
-        }
-      });
-    } catch (e) {
-      // Display an error message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('An error occurred: $e'),
-        ),
-      );
-    } finally {
-      // Dismiss the dialog
-      Navigator.of(context).pop();
-    }
   }
 
   void _addCardController() {
@@ -219,42 +171,44 @@ class _SmartCardPageState extends State<SmartCardPage> {
     super.dispose();
   }
 
-  void _pickFile() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf'],
-    );
-
-    if (result != null) {
-      setState(() {
-        _selectedFile = result.files.first;
-      });
-    }
-  }
-
-  _buildPDFUpload() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: ElevatedButton(
-              onPressed: _pickFile,
-              child: Text('Select PDF'),
+  Widget _buildMultilineTextField() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: TextField(
+            controller: _jsonController,
+            keyboardType: TextInputType.multiline,
+            maxLines: null,
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+              labelText: 'JSON Deck',
             ),
           ),
-          if (_selectedFile != null)
-            Text('Selected file: ${_selectedFile!.name}'),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: ElevatedButton(
-              onPressed: _analyzeFile,
-              child: Text('Generate Deck'),
-            ),
-          ),
-        ],
-      ),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            // Parse the JSON string
+            final Map<String, dynamic> jsonData =
+                jsonDecode(_jsonController.text);
+
+            // Set the values of the controllers
+            setState(() {
+              _deckTitleController.text = jsonData['title'];
+              _cardControllers.clear();
+              for (var flashcard in jsonData['flashcards']) {
+                _cardControllers.add({
+                  'front': TextEditingController(text: flashcard['front']),
+                  'back': TextEditingController(text: flashcard['back']),
+                });
+              }
+            });
+          },
+          child: const Text('Generate Deck'),
+        ),
+      ],
     );
   }
 
@@ -272,7 +226,7 @@ class _SmartCardPageState extends State<SmartCardPage> {
               child: Column(
                 // crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _buildPDFUpload(),
+                  _buildMultilineTextField(),
                   _buildDeckTitleInput(),
                   _buildVideoUrlInput(),
                   _buildEvaluatorStrictnessSwitch(),
@@ -374,7 +328,7 @@ class _SmartCardPageState extends State<SmartCardPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Tags', style: Theme.of(context).textTheme.headlineSmall),
-        SizedBox(height: 8),
+        const SizedBox(height: 8),
         TextField(
           controller: _tagsController,
           decoration: const InputDecoration(
@@ -382,7 +336,7 @@ class _SmartCardPageState extends State<SmartCardPage> {
             hintText: 'Enter tags (e.g., a/b/c)',
           ),
         ),
-        SizedBox(height: 16),
+        const SizedBox(height: 16),
       ],
     );
   }
@@ -392,7 +346,7 @@ class _SmartCardPageState extends State<SmartCardPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Video URL', style: Theme.of(context).textTheme.headlineSmall),
-        SizedBox(height: 8),
+        const SizedBox(height: 8),
         TextField(
           controller: _videoeUrlController,
           decoration: const InputDecoration(
@@ -400,7 +354,7 @@ class _SmartCardPageState extends State<SmartCardPage> {
             hintText: 'Enter Video URL',
           ),
         ),
-        SizedBox(height: 16),
+        const SizedBox(height: 16),
       ],
     );
   }
@@ -410,7 +364,7 @@ class _SmartCardPageState extends State<SmartCardPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Deck Title', style: Theme.of(context).textTheme.headlineSmall),
-        SizedBox(height: 8),
+        const SizedBox(height: 8),
         TextField(
           controller: _deckTitleController,
           decoration: const InputDecoration(
@@ -418,7 +372,7 @@ class _SmartCardPageState extends State<SmartCardPage> {
             hintText: 'Enter deck title',
           ),
         ),
-        SizedBox(height: 16),
+        const SizedBox(height: 16),
       ],
     );
   }
@@ -435,9 +389,9 @@ class _SmartCardPageState extends State<SmartCardPage> {
 
   Widget _buildCardItem(int index) {
     return AnimatedContainer(
-      duration: Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 500),
       curve: Curves.easeInOut,
-      margin: EdgeInsets.symmetric(vertical: 8),
+      margin: const EdgeInsets.symmetric(vertical: 8),
       child: Card(
         elevation: 4,
         child: Padding(
@@ -450,7 +404,7 @@ class _SmartCardPageState extends State<SmartCardPage> {
                   Text('Card ${index + 1}',
                       style: Theme.of(context).textTheme.headlineSmall),
                   IconButton(
-                    icon: Icon(Icons.delete, color: Colors.red),
+                    icon: const Icon(Icons.delete, color: Colors.red),
                     onPressed: () => setState(() {
                       _cardControllers.removeAt(index);
                     }),
@@ -461,21 +415,21 @@ class _SmartCardPageState extends State<SmartCardPage> {
               TextField(
                 controller:
                     _cardControllers[index]['front'] as TextEditingController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Front',
                   border: OutlineInputBorder(),
                 ),
               ),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               TextField(
                 controller:
                     _cardControllers[index]['back'] as TextEditingController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Back',
                   border: OutlineInputBorder(),
                 ),
               ),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: _buildImagePicker(
@@ -519,10 +473,10 @@ class _SmartCardPageState extends State<SmartCardPage> {
               ),
             ),
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           ElevatedButton.icon(
             onPressed: () => _pickImage(imageController),
-            icon: Icon(Icons.image),
+            icon: const Icon(Icons.image),
             label: Text(buttonText),
           ),
         ],
@@ -532,7 +486,7 @@ class _SmartCardPageState extends State<SmartCardPage> {
     // Return a placeholder or button if no image is available
     return ElevatedButton.icon(
       onPressed: () => _pickImage(imageController),
-      icon: Icon(Icons.image),
+      icon: const Icon(Icons.image),
       label: Text(buttonText),
     );
   }
@@ -564,22 +518,23 @@ class _SmartCardPageState extends State<SmartCardPage> {
       children: [
         if (index != 0)
           IconButton(
-            icon: Icon(Icons.arrow_upward),
+            icon: const Icon(Icons.arrow_upward),
             onPressed: () => _moveCardUp(index),
           ),
         IconButton(
-          icon: Icon(Icons.vertical_align_top), // Icon for adding above
+          icon: const Icon(Icons.vertical_align_top), // Icon for adding above
           onPressed: () => _addCardAbove(index),
           tooltip: 'Add Card Above',
         ),
         IconButton(
-          icon: Icon(Icons.vertical_align_bottom), // Icon for adding below
+          icon:
+              const Icon(Icons.vertical_align_bottom), // Icon for adding below
           onPressed: () => _addCardBelow(index),
           tooltip: 'Add Card Below',
         ),
         if (index != _cardControllers.length - 1)
           IconButton(
-            icon: Icon(Icons.arrow_downward),
+            icon: const Icon(Icons.arrow_downward),
             onPressed: () => _moveCardDown(index),
           ),
       ],
