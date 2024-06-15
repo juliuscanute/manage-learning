@@ -6,7 +6,7 @@ abstract class DeckEvent extends Equatable {
 }
 
 class LoadDeckData extends DeckEvent {
-  final String deckId;
+  final String? deckId;
 
   LoadDeckData(this.deckId);
 

@@ -7,7 +7,7 @@ import 'package:manage_learning/ui/add_cards_page.dart';
 import 'package:manage_learning/ui/category_screen.dart';
 import 'package:manage_learning/ui/decks_page.dart';
 import 'package:manage_learning/ui/edit_cards_page.dart';
-import 'package:manage_learning/ui/edit_cards_page_new.dart';
+import 'package:manage_learning/ui/cards_page_view.dart';
 import 'package:manage_learning/ui/login_screen.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -88,9 +88,15 @@ class MyApp extends StatelessWidget {
                 } else if (settings.name == '/decks') {
                   return const DecksPage();
                 } else if (settings.name == '/addcards') {
-                  return AddCardsPage();
+                  return const CardsPageView(
+                    deckId: null,
+                    operation: DeckOperation.create,
+                  );
                 } else if (settings.name == '/editcards') {
-                  return EditCardsPageNew(deckId: settings.arguments as String);
+                  return CardsPageView(
+                    deckId: settings.arguments as String,
+                    operation: DeckOperation.edit,
+                  );
                 } else if (settings.name == '/category-screen') {
                   final args = settings.arguments as Map<String, dynamic>;
                   final decks = args['decks'] as List<Map<String, dynamic>>;

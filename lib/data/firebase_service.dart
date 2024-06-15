@@ -304,7 +304,7 @@ class FirebaseService {
   }
 
   Future<void> addCard(String deckId, String front, String back,
-      String imageUrl, int position) async {
+      String? imageUrl, int position) async {
     await _firestore.collection('decks').doc(deckId).collection('cards').add({
       'front': front,
       'back': back,

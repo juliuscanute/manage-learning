@@ -5,15 +5,17 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:manage_learning/data/firebase_service.dart';
+import 'package:manage_learning/ui/cards_page_view.dart';
 import 'package:path/path.dart';
 import 'deck_event.dart';
 import 'deck_state.dart';
 
 class DeckBloc extends Bloc<DeckEvent, DeckState> {
   final FirebaseService _firebaseService;
-  final String deckId;
+  final String? deckId;
+  final DeckOperation operation;
 
-  DeckBloc(this._firebaseService, this.deckId)
+  DeckBloc(this._firebaseService, this.deckId, this.operation)
       : super(
           DeckState(
             isLoading: true,
@@ -42,9 +44,14 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
 
   Future<void> _onLoadDeckData(
       LoadDeckData event, Emitter<DeckState> emit) async {
+    final deckId = event.deckId;
+    if (deckId == null) {
+      emit(state.copyWith(isLoading: false));
+      return;
+    }
     try {
       emit(state.copyWith(isLoading: true));
-      var deckData = await _firebaseService.getDeckData(event.deckId);
+      var deckData = await _firebaseService.getDeckData(deckId);
 
       // Create a modifiable copy of `mindmapImageController` if it's unmodifiable.
       var mindmapImageController =
@@ -96,30 +103,91 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
   }
 
   void _onAddCardController(AddCardController event, Emitter<DeckState> emit) {
-    state.cardControllers.add({
-      'front': TextEditingController(),
-      'back': TextEditingController(),
-      'position': state.cardControllers.length,
-    });
-    emit(state.copyWith(cardControllers: List.from(state.cardControllers)));
+    final updatedControllers =
+        List<Map<String, dynamic>>.from(state.cardControllers)
+          ..add({
+            'front': TextEditingController(),
+            'back': TextEditingController(),
+            'position': state.cardControllers.length,
+          });
+
+    emit(state.copyWith(cardControllers: updatedControllers));
   }
 
   Future<void> _onSaveDeckAndCards(
       SaveDeckAndCards event, Emitter<DeckState> emit) async {
+    if (operation == DeckOperation.edit) {
+      await _updateDeck(event, emit);
+    } else {
+      await _createDeck(event, emit);
+    }
+  }
+
+  Future<void> _createDeck(
+      SaveDeckAndCards event, Emitter<DeckState> emit) async {
     try {
       emit(state.copyWith(isLoading: true));
-      await _uploadImage(state.mindmapImageController, 'mindmap_images');
-      for (var controller in state.cardControllers) {
-        await _uploadImage(controller, 'card_images');
+      List<String> tags = state.tagsController.text
+          .split('/')
+          .where((tag) => tag.isNotEmpty)
+          .toList();
+      var deckId = await _firebaseService.createDeck(
+          state.deckTitleController.text,
+          tags,
+          state.isEvaluatorStrict,
+          state.isPublic);
+
+      if (state.videoUrlController.text.isNotEmpty) {
+        await _firebaseService.updateDeckWithVideoUrl(
+            deckId, state.videoUrlController.text);
       }
+
+      print("Processing mindmap");
+      await _uploadImage(state.mindmapImageController, 'mindmap_images');
+      final mapUrl = state.mindmapImageController['imageUrl'];
+      if (mapUrl.isNotEmpty) {
+        await _firebaseService.updateDeckWithMapUrl(deckId, mapUrl);
+      }
+
+      print('Processing card');
+
+      for (var i = 0; i < state.cardControllers.length; i++) {
+        var controllers = state.cardControllers[i];
+
+        await _uploadImage(controllers, 'card_images');
+        await _firebaseService.addCard(
+          deckId,
+          controllers['front']!.text,
+          controllers['back']!.text,
+          controllers['imageUrl'],
+          i,
+        );
+        print('Card $i added');
+      }
+    } catch (e) {
+      print("Error saving deck: $e");
+    } finally {
+      emit(state.copyWith(isLoading: false, finishSave: true));
+    }
+  }
+
+  Future<void> _updateDeck(
+      SaveDeckAndCards event, Emitter<DeckState> emit) async {
+    try {
+      emit(state.copyWith(isLoading: true));
 
       List<String> tags = state.tagsController.text
           .split('/')
           .where((tag) => tag.isNotEmpty)
           .toList();
 
+      await _uploadImage(state.mindmapImageController, 'mindmap_images');
+      for (var controller in state.cardControllers) {
+        await _uploadImage(controller, 'card_images');
+      }
+
       await _firebaseService.updateDeck(
-        deckId,
+        deckId!,
         state.deckTitleController.text,
         state.videoUrlController.text,
         state.mindmapImageController['imageUrl'],

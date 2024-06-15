@@ -9,19 +9,33 @@ import 'package:manage_learning/ui/deck_state.dart';
 import 'package:path/path.dart';
 import 'package:provider/provider.dart';
 
-class EditCardsPageNew extends StatelessWidget {
-  final String deckId;
+class CardsPageView extends StatelessWidget {
+  final String? deckId;
+  final DeckOperation operation;
 
-  const EditCardsPageNew({required this.deckId, Key? key}) : super(key: key);
+  const CardsPageView({required this.deckId, required this.operation, Key? key})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) =>
-          DeckBloc(Provider.of<FirebaseService>(context, listen: false), deckId)
-            ..add(LoadDeckData(deckId)),
+      create: (context) => DeckBloc(
+          Provider.of<FirebaseService>(context, listen: false),
+          deckId,
+          operation)
+        ..add(LoadDeckData(
+          deckId,
+        )),
       child: Scaffold(
-        appBar: AppBar(title: const Text('Edit Deck and Cards')),
+        appBar: AppBar(
+          title: Text(
+            operation == DeckOperation.create
+                ? 'Create Deck and Cards'
+                : operation == DeckOperation.edit
+                    ? 'Edit Deck and Cards'
+                    : 'Load Deck and Cards',
+          ),
+        ),
         body: BlocBuilder<DeckBloc, DeckState>(
           builder: (context, state) {
             if (state.finishSave) {
@@ -377,3 +391,5 @@ class EditCardsPageNew extends StatelessWidget {
     );
   }
 }
+
+enum DeckOperation { create, edit, load }
