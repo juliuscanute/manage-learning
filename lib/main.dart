@@ -3,15 +3,12 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:manage_learning/data/firebase_service.dart';
-import 'package:manage_learning/ui/add_cards_page.dart';
 import 'package:manage_learning/ui/category_screen.dart';
 import 'package:manage_learning/ui/decks_page.dart';
-import 'package:manage_learning/ui/edit_cards_page.dart';
 import 'package:manage_learning/ui/cards_page_view.dart';
 import 'package:manage_learning/ui/login_screen.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:manage_learning/ui/smart_cards_page.dart';
 import 'package:provider/provider.dart';
 
 void main() async {

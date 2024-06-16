@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
 
@@ -303,13 +302,23 @@ class FirebaseService {
     await _firestore.collection('decks').doc(deckId).delete();
   }
 
-  Future<void> addCard(String deckId, String front, String back,
-      String? imageUrl, int position) async {
+  Future<void> addCard(
+      String deckId,
+      String front,
+      String? frontTex,
+      String back,
+      String? backTex,
+      String? imageUrl,
+      Map<String, dynamic> mcq,
+      int position) async {
     await _firestore.collection('decks').doc(deckId).collection('cards').add({
       'front': front,
+      'frontTex': frontTex,
       'back': back,
+      'backTex': backTex,
       'imageUrl': imageUrl, // Include the image URL in the saved data
       'position': position, // Include the position in the saved data
+      'mcq': mcq,
     });
   }
 

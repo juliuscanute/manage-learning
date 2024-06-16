@@ -161,8 +161,11 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
         await _firebaseService.addCard(
           deckId,
           controllers['front']!.text,
+          controllers['front_tex'],
           controllers['back']!.text,
+          controllers['back_tex'],
           controllers['imageUrl'],
+          controllers['mcq'],
           i,
         );
         print('Card $i added');
@@ -337,11 +340,28 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
     try {
       emit(state.copyWith(isLoading: true));
       final Map<String, dynamic> jsonData = jsonDecode(event.jsonDeck);
-      final updatedControllers = jsonData['flashcards'].map((flashcard) {
+      final flashcards =
+          jsonData['flashcards'] ?? []; // Provide a default empty list if null
+      final updatedControllers = flashcards.map((flashcard) {
         return {
           'front': TextEditingController(text: flashcard['front']),
+          'front_tex': flashcard.containsKey('front_tex')
+              ? flashcard['front_tex']
+              : null,
           'back': TextEditingController(text: flashcard['back']),
+          'back_tex':
+              flashcard.containsKey('back_tex') ? flashcard['back_tex'] : null,
           'image': null,
+          'mcq': flashcard.containsKey('mcq')
+              ? {
+                  'question': flashcard['mcq']['question'],
+                  'options':
+                      List<String>.from(flashcard['mcq']['options'] ?? []),
+                  'options_tex':
+                      List<String>.from(flashcard['mcq']['options_tex'] ?? []),
+                  'answer_index': flashcard['mcq']['answer_index'],
+                }
+              : {},
         };
       }).toList();
 
