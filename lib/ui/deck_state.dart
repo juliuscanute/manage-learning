@@ -6,6 +6,7 @@ class DeckState extends Equatable {
   final TextEditingController deckTitleController;
   final TextEditingController videoUrlController;
   final TextEditingController tagsController;
+  final TextEditingController jsonController;
   final Map<String, dynamic> mindmapImageController;
   final List<Map<String, dynamic>> cardControllers;
   final bool isEvaluatorStrict;
@@ -17,6 +18,7 @@ class DeckState extends Equatable {
     required this.deckTitleController,
     required this.videoUrlController,
     required this.tagsController,
+    required this.jsonController,
     required this.mindmapImageController,
     required this.cardControllers,
     required this.isEvaluatorStrict,
@@ -29,6 +31,7 @@ class DeckState extends Equatable {
     TextEditingController? deckTitleController,
     TextEditingController? videoUrlController,
     TextEditingController? tagsController,
+    TextEditingController? jsonController,
     Map<String, dynamic>? mindmapImageController,
     List<Map<String, dynamic>>? cardControllers,
     bool? isEvaluatorStrict,
@@ -40,6 +43,7 @@ class DeckState extends Equatable {
       deckTitleController: deckTitleController ?? this.deckTitleController,
       videoUrlController: videoUrlController ?? this.videoUrlController,
       tagsController: tagsController ?? this.tagsController,
+      jsonController: jsonController ?? this.jsonController,
       mindmapImageController:
           mindmapImageController ?? this.mindmapImageController,
       cardControllers: cardControllers ?? this.cardControllers,
@@ -55,6 +59,7 @@ class DeckState extends Equatable {
         deckTitleController,
         videoUrlController,
         tagsController,
+        jsonController,
         mindmapImageController,
         cardControllers,
         isEvaluatorStrict,

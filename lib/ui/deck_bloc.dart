@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:firebase_storage/firebase_storage.dart';
@@ -22,6 +23,7 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
             deckTitleController: TextEditingController(),
             videoUrlController: TextEditingController(),
             tagsController: TextEditingController(),
+            jsonController: TextEditingController(),
             mindmapImageController: const {'image': null, 'imageUrl': ''},
             cardControllers: [],
             isEvaluatorStrict: true,
@@ -40,6 +42,7 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
     on<UpdateImage>(_onUpdateImage);
     on<AddCardAbove>(_onAddCardAbove);
     on<AddCardBelow>(_onAddCardBelow);
+    on<UpdateJsonDeck>(_onUpdateJsonDeck);
   }
 
   Future<void> _onLoadDeckData(
@@ -328,5 +331,28 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
     }
 
     emit(state.copyWith(cardControllers: updatedControllers));
+  }
+
+  void _onUpdateJsonDeck(UpdateJsonDeck event, Emitter<DeckState> emit) {
+    try {
+      emit(state.copyWith(isLoading: true));
+      final Map<String, dynamic> jsonData = jsonDecode(event.jsonDeck);
+      final updatedControllers = jsonData['flashcards'].map((flashcard) {
+        return {
+          'front': TextEditingController(text: flashcard['front']),
+          'back': TextEditingController(text: flashcard['back']),
+          'image': null,
+        };
+      }).toList();
+
+      emit(state.copyWith(
+        deckTitleController: TextEditingController(text: jsonData['title']),
+        cardControllers: List<Map<String, dynamic>>.from(updatedControllers),
+      ));
+    } catch (e) {
+      print("Error parsing JSON: $e");
+    } finally {
+      emit(state.copyWith(isLoading: false));
+    }
   }
 }

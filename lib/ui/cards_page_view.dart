@@ -50,6 +50,8 @@ class CardsPageView extends StatelessWidget {
                         padding: const EdgeInsets.all(16.0),
                         child: Column(
                           children: [
+                            if (operation == DeckOperation.load)
+                              _buildMultilineTextField(context, state),
                             _buildDeckTitle(state, context),
                             const SizedBox(height: 8),
                             _buildDeckTitleInput(state),
@@ -77,6 +79,52 @@ class CardsPageView extends StatelessWidget {
             ]);
           },
         ),
+      ),
+    );
+  }
+
+  Widget _buildMultilineTextField(BuildContext context, DeckState state) {
+    return SizedBox(
+      height: 500, // Set your desired height here
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(
+                left: 8.0, bottom: 8.0), // Adjust padding as needed
+            child: Text(
+              'JSON Deck',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ),
+          Flexible(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxHeight: 400, // Set your desired maximum height here
+              ),
+              child: TextField(
+                controller: state.jsonController,
+                keyboardType: TextInputType.multiline,
+                maxLines: null,
+                expands: true,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16), // Padding between TextField and Button
+          Center(
+            child: ElevatedButton(
+              onPressed: () {
+                context
+                    .read<DeckBloc>()
+                    .add(UpdateJsonDeck(state.jsonController.text));
+              },
+              child: const Text('Generate Deck'),
+            ),
+          ),
+        ],
       ),
     );
   }

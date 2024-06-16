@@ -93,3 +93,12 @@ class AddCardBelow extends DeckEvent {
   @override
   List<Object?> get props => [index];
 }
+
+class UpdateJsonDeck extends DeckEvent {
+  final String jsonDeck;
+
+  UpdateJsonDeck(this.jsonDeck);
+
+  @override
+  List<Object?> get props => [jsonDeck];
+}

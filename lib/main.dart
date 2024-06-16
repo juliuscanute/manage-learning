@@ -104,7 +104,8 @@ class MyApp extends StatelessWidget {
                   return CategoryScreen(
                       categoryList: categoryList, decks: decks);
                 } else if (settings.name == '/smart-deck') {
-                  return SmartCardPage();
+                  return const CardsPageView(
+                      deckId: null, operation: DeckOperation.load);
                 }
                 return Container();
               },
