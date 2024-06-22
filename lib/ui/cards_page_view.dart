@@ -237,17 +237,18 @@ class CardsPageView extends StatelessWidget {
               children: [
                 const SizedBox(height: 24),
                 LatexToggle(
-                    normalController:
-                        controller['front'] as TextEditingController,
-                    latexController:
-                        controller['frontTex'] as TextEditingController),
+                  normalController:
+                      controller['front'] as TextEditingController,
+                  latexController:
+                      controller['frontTex'] as TextEditingController,
+                  label: 'Front',
+                ),
                 const SizedBox(height: 8),
-                TextField(
-                  controller: controller['back'] as TextEditingController,
-                  decoration: const InputDecoration(
-                    labelText: 'Back',
-                    border: OutlineInputBorder(),
-                  ),
+                LatexToggle(
+                  normalController: controller['back'] as TextEditingController,
+                  latexController:
+                      controller['backTex'] as TextEditingController,
+                  label: 'Back',
                 ),
                 const SizedBox(height: 8),
                 _buildImagePicker(

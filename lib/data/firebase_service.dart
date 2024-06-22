@@ -330,21 +330,6 @@ class FirebaseService {
     });
   }
 
-  Future<void> updateCard(String deckId, String cardId, String front,
-      String back, String position, String imageUrl) async {
-    await _firestore
-        .collection('decks')
-        .doc(deckId)
-        .collection('cards')
-        .doc(cardId)
-        .update({
-      'front': front,
-      'back': back,
-      'position': position,
-      'imageUrl': imageUrl
-    });
-  }
-
   Future<void> deleteImage(String? imageUrl) async {
     if (imageUrl == null || imageUrl.isEmpty) {
       return;

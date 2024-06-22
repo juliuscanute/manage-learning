@@ -4,10 +4,12 @@ import 'package:flutter_tex/flutter_tex.dart';
 class LatexToggle extends StatefulWidget {
   final TextEditingController normalController;
   final TextEditingController latexController;
+  final String label;
 
   LatexToggle({
     required this.normalController,
     required this.latexController,
+    required this.label,
   });
 
   @override
@@ -16,6 +18,15 @@ class LatexToggle extends StatefulWidget {
 
 class _LatexToggleState extends State<LatexToggle> {
   bool _isLatexVisible = false;
+
+  String ensureLatexSyntax(String text) {
+    final latexRegex = RegExp(r'\\[a-zA-Z]+|(\$.*?\$)|(\$\$.*?\$\$)');
+    if (latexRegex.hasMatch(text)) {
+      return text;
+    } else {
+      return '\$\$$text\$\$';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,9 +38,9 @@ class _LatexToggleState extends State<LatexToggle> {
             Expanded(
               child: TextField(
                 controller: widget.normalController,
-                decoration: const InputDecoration(
-                  labelText: 'Front',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: widget.label,
+                  border: const OutlineInputBorder(),
                 ),
                 readOnly: _isLatexVisible,
               ),
@@ -42,9 +53,9 @@ class _LatexToggleState extends State<LatexToggle> {
                     flex: 1,
                     child: TextField(
                       controller: widget.latexController,
-                      decoration: const InputDecoration(
-                        labelText: 'Edit LaTeX',
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: 'Edit ${widget.label} LaTeX',
+                        border: const OutlineInputBorder(),
                       ),
                       onChanged: (value) {
                         setState(() {});
@@ -58,14 +69,14 @@ class _LatexToggleState extends State<LatexToggle> {
                       child: TeXView(
                         child: TeXViewDocument(
                           widget.latexController.text.isNotEmpty
-                              ? "\\(${widget.latexController.text}\\)"
+                              ? ensureLatexSyntax(widget.latexController.text)
                               : r'\text{No LaTeX content}',
                           style: const TeXViewStyle(
                             backgroundColor: Colors.transparent,
                             contentColor: Colors.black,
                           ),
                         ),
-                        renderingEngine: const TeXViewRenderingEngine.mathjax(),
+                        renderingEngine: const TeXViewRenderingEngine.katex(),
                       ),
                     ),
                   ),

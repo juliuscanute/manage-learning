@@ -77,7 +77,7 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
                   'frontTex':
                       TextEditingController(text: cardData['front_tex']),
                   'back': TextEditingController(text: cardData['back']),
-                  'backTex': cardData['backTex'] ?? '',
+                  'backTex': TextEditingController(text: cardData['back_tex']),
                   'position': cardData['position'],
                   'imageUrl': cardData['imageUrl'] ?? '',
                   'mcq': cardData['mcq'] ?? {},
@@ -116,6 +116,7 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
             'front': TextEditingController(),
             'fontTex': TextEditingController(),
             'back': TextEditingController(),
+            'backTex': TextEditingController(),
             'position': state.cardControllers.length,
           });
 
@@ -168,7 +169,7 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
           controllers['front']!.text,
           controllers['frontTex']!.text,
           controllers['back']!.text,
-          controllers['backTex'],
+          controllers['backTex']!.text,
           controllers['imageUrl'],
           controllers['mcq'],
           i,
@@ -209,7 +210,7 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
                   'front': e['front'].text,
                   'front_tex': e['frontTex'].text,
                   'back': e['back'].text,
-                  'back_tex': e['backTex'],
+                  'back_tex': e['backTex'].text,
                   'imageUrl': e['imageUrl'],
                   'position': e['position'],
                   'mcq': e['mcq'],
@@ -311,7 +312,9 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
         List.from(state.cardControllers)
           ..insert(event.index, {
             'front': TextEditingController(),
+            'frontTex': TextEditingController(),
             'back': TextEditingController(),
+            'backTex': TextEditingController(),
             'position': event.index,
             'image': null,
             'imageName': '',
@@ -330,7 +333,9 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
         List.from(state.cardControllers)
           ..insert(event.index + 1, {
             'front': TextEditingController(),
+            'frontTex': TextEditingController(),
             'back': TextEditingController(),
+            'backTex': TextEditingController(),
             'position': event.index + 1,
             'image': null,
             'imageName': '',
@@ -355,8 +360,7 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
           'front': TextEditingController(text: flashcard['front']),
           'frontTex': TextEditingController(text: flashcard['front_tex']),
           'back': TextEditingController(text: flashcard['back']),
-          'back_tex':
-              flashcard.containsKey('back_tex') ? flashcard['back_tex'] : null,
+          'backTex': TextEditingController(text: flashcard['back_tex']),
           'image': null,
           'mcq': flashcard.containsKey('mcq')
               ? {
