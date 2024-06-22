@@ -74,9 +74,12 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
             .map((cardData) => {
                   'id': cardData['id'],
                   'front': TextEditingController(text: cardData['front']),
+                  'frontTex': cardData['frontTex'] ?? '',
                   'back': TextEditingController(text: cardData['back']),
+                  'backTex': cardData['backTex'] ?? '',
                   'position': cardData['position'],
                   'imageUrl': cardData['imageUrl'] ?? '',
+                  'mcq': cardData['mcq'] ?? {},
                 })
             .toList()
           ..sort(
@@ -354,7 +357,6 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
           'image': null,
           'mcq': flashcard.containsKey('mcq')
               ? {
-                  'question': flashcard['mcq']['question'],
                   'options':
                       List<String>.from(flashcard['mcq']['options'] ?? []),
                   'options_tex':
