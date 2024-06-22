@@ -74,7 +74,8 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
             .map((cardData) => {
                   'id': cardData['id'],
                   'front': TextEditingController(text: cardData['front']),
-                  'frontTex': cardData['frontTex'] ?? '',
+                  'frontTex':
+                      TextEditingController(text: cardData['front_tex']),
                   'back': TextEditingController(text: cardData['back']),
                   'backTex': cardData['backTex'] ?? '',
                   'position': cardData['position'],
@@ -113,6 +114,7 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
         List<Map<String, dynamic>>.from(state.cardControllers)
           ..add({
             'front': TextEditingController(),
+            'fontTex': TextEditingController(),
             'back': TextEditingController(),
             'position': state.cardControllers.length,
           });
@@ -164,9 +166,9 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
         await _firebaseService.addCard(
           deckId,
           controllers['front']!.text,
-          controllers['front_tex'],
+          controllers['frontTex']!.text,
           controllers['back']!.text,
-          controllers['back_tex'],
+          controllers['backTex'],
           controllers['imageUrl'],
           controllers['mcq'],
           i,
@@ -205,9 +207,12 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
             .map((e) => {
                   'id': e['id'],
                   'front': e['front'].text,
+                  'front_tex': e['frontTex'].text,
                   'back': e['back'].text,
+                  'back_tex': e['backTex'],
                   'imageUrl': e['imageUrl'],
                   'position': e['position'],
+                  'mcq': e['mcq'],
                 })
             .toList(),
         tags,
@@ -348,9 +353,7 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
       final updatedControllers = flashcards.map((flashcard) {
         return {
           'front': TextEditingController(text: flashcard['front']),
-          'front_tex': flashcard.containsKey('front_tex')
-              ? flashcard['front_tex']
-              : null,
+          'frontTex': TextEditingController(text: flashcard['front_tex']),
           'back': TextEditingController(text: flashcard['back']),
           'back_tex':
               flashcard.containsKey('back_tex') ? flashcard['back_tex'] : null,

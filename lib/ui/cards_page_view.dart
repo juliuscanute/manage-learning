@@ -6,6 +6,7 @@ import 'package:manage_learning/data/firebase_service.dart';
 import 'package:manage_learning/ui/deck_bloc.dart';
 import 'package:manage_learning/ui/deck_event.dart';
 import 'package:manage_learning/ui/deck_state.dart';
+import 'package:manage_learning/ui/latex_toggle.dart';
 import 'package:path/path.dart';
 import 'package:provider/provider.dart';
 
@@ -235,13 +236,11 @@ class CardsPageView extends StatelessWidget {
             child: Column(
               children: [
                 const SizedBox(height: 24),
-                TextField(
-                  controller: controller['front'] as TextEditingController,
-                  decoration: const InputDecoration(
-                    labelText: 'Front',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
+                LatexToggle(
+                    normalController:
+                        controller['front'] as TextEditingController,
+                    latexController:
+                        controller['frontTex'] as TextEditingController),
                 const SizedBox(height: 8),
                 TextField(
                   controller: controller['back'] as TextEditingController,

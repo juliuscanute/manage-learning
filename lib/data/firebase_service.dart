@@ -63,7 +63,9 @@ class FirebaseService {
         .map((index, doc) => MapEntry(index, {
               'id': doc.id,
               'front': doc.data()['front'] ?? '',
+              'front_tex': doc.data()['front_tex'] ?? '',
               'back': doc.data()['back'] ?? '',
+              'back_tex': doc.data()['back_tex'] ?? '',
               'imageUrl': doc.data()['imageUrl'] ?? '',
               'position':
                   doc.data()['position'] ?? index, // Use map index as fallback
@@ -217,7 +219,9 @@ class FirebaseService {
 
       // Check if the card has been modified
       bool isModified = (originalCard['front'] != card['front'] ||
+          originalCard['front_tex'] != card['front_tex'] ||
           originalCard['back'] != card['back'] ||
+          originalCard['back_tex'] != card['back_tex'] ||
           originalCard['imageUrl'] != card['imageUrl'] ||
           originalCard['position'] != card['position']);
 
@@ -226,7 +230,9 @@ class FirebaseService {
         cardRef = cardCollection.doc(card['id']);
         batch.update(cardRef, {
           'front': card['front'],
+          'front_tex': card['front_tex'],
           'back': card['back'],
+          'back_tex': card['back_tex'],
           'imageUrl': card['imageUrl'],
           'position': card['position'],
         });
@@ -235,7 +241,9 @@ class FirebaseService {
         cardRef = cardCollection.doc(); // Let Firestore generate a new ID
         batch.set(cardRef, {
           'front': card['front'],
+          'front_tex': card['front_tex'],
           'back': card['back'],
+          'back_tex': card['back_tex'],
           'imageUrl': card['imageUrl'],
           'position': card['position'],
         });
@@ -313,9 +321,9 @@ class FirebaseService {
       int position) async {
     await _firestore.collection('decks').doc(deckId).collection('cards').add({
       'front': front,
-      'frontTex': frontTex,
+      'front_tex': frontTex,
       'back': back,
-      'backTex': backTex,
+      'back_tex': backTex,
       'imageUrl': imageUrl, // Include the image URL in the saved data
       'position': position, // Include the position in the saved data
       'mcq': mcq,
