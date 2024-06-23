@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:manage_learning/data/firebase_service.dart';
 import 'package:manage_learning/ui/cards_page_view.dart';
+import 'package:manage_learning/ui/mcq_controller.dart';
 import 'package:path/path.dart';
 import 'deck_event.dart';
 import 'deck_state.dart';
@@ -80,7 +81,7 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
                   'backTex': TextEditingController(text: cardData['back_tex']),
                   'position': cardData['position'],
                   'imageUrl': cardData['imageUrl'] ?? '',
-                  'mcq': cardData['mcq'] ?? {},
+                  'mcq': MCQController.fromMap(cardData['mcq'] ?? {}),
                 })
             .toList()
           ..sort(
@@ -118,6 +119,7 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
             'back': TextEditingController(),
             'backTex': TextEditingController(),
             'position': state.cardControllers.length,
+            'mcq': MCQController.initialize(),
           });
 
     emit(state.copyWith(cardControllers: updatedControllers));
@@ -171,7 +173,7 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
           controllers['back']!.text,
           controllers['backTex']!.text,
           controllers['imageUrl'],
-          controllers['mcq'],
+          (controllers['mcq'] as MCQController).toMap(),
           i,
         );
         print('Card $i added');
@@ -213,7 +215,7 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
                   'back_tex': e['backTex'].text,
                   'imageUrl': e['imageUrl'],
                   'position': e['position'],
-                  'mcq': e['mcq'],
+                  'mcq': (e['mcq'] as MCQController).toMap(),
                 })
             .toList(),
         tags,
@@ -319,6 +321,7 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
             'image': null,
             'imageName': '',
             'imageUrl': '',
+            'mcq': MCQController.initialize(),
           });
 
     for (int i = 0; i < updatedControllers.length; i++) {
@@ -340,6 +343,7 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
             'image': null,
             'imageName': '',
             'imageUrl': '',
+            'mcq': MCQController.initialize(),
           });
 
     for (int i = 0; i < updatedControllers.length; i++) {
@@ -362,7 +366,7 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
           'back': TextEditingController(text: flashcard['back']),
           'backTex': TextEditingController(text: flashcard['back_tex']),
           'image': null,
-          'mcq': flashcard.containsKey('mcq')
+          'mcq': MCQController.fromMap(flashcard.containsKey('mcq')
               ? {
                   'options':
                       List<String>.from(flashcard['mcq']['options'] ?? []),
@@ -370,7 +374,7 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
                       List<String>.from(flashcard['mcq']['options_tex'] ?? []),
                   'answer_index': flashcard['mcq']['answer_index'],
                 }
-              : {},
+              : {}),
         };
       }).toList();
 

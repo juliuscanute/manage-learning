@@ -69,6 +69,7 @@ class FirebaseService {
               'imageUrl': doc.data()['imageUrl'] ?? '',
               'position':
                   doc.data()['position'] ?? index, // Use map index as fallback
+              'mcq': doc.data()['mcq'] ?? {},
             }))
         .values // Convert back to iterable
         .toList();
@@ -219,11 +220,12 @@ class FirebaseService {
 
       // Check if the card has been modified
       bool isModified = (originalCard['front'] != card['front'] ||
-          originalCard['front_tex'] != card['front_tex'] ||
-          originalCard['back'] != card['back'] ||
-          originalCard['back_tex'] != card['back_tex'] ||
-          originalCard['imageUrl'] != card['imageUrl'] ||
-          originalCard['position'] != card['position']);
+              originalCard['front_tex'] != card['front_tex'] ||
+              originalCard['back'] != card['back'] ||
+              originalCard['back_tex'] != card['back_tex'] ||
+              originalCard['imageUrl'] != card['imageUrl'] ||
+              originalCard['position'] != card['position']) ||
+          originalCard['mcq'] != card['mcq'];
 
       if (card.containsKey('id') && card['id'] != null && isModified) {
         // Existing card, update
@@ -235,6 +237,7 @@ class FirebaseService {
           'back_tex': card['back_tex'],
           'imageUrl': card['imageUrl'],
           'position': card['position'],
+          'mcq': card['mcq'],
         });
       } else if (!card.containsKey('id') || card['id'] == null) {
         // New card, add
@@ -246,6 +249,7 @@ class FirebaseService {
           'back_tex': card['back_tex'],
           'imageUrl': card['imageUrl'],
           'position': card['position'],
+          'mcq': card['mcq'],
         });
       }
     }

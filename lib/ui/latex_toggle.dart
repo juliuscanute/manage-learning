@@ -20,12 +20,17 @@ class _LatexToggleState extends State<LatexToggle> {
   bool _isLatexVisible = false;
 
   String ensureLatexSyntax(String text) {
-    final latexRegex = RegExp(r'\\[a-zA-Z]+|(\$.*?\$)|(\$\$.*?\$\$)');
-    if (latexRegex.hasMatch(text)) {
-      return text;
-    } else {
+    // This regex looks for common LaTeX commands and environments
+    final latexCommandRegex =
+        RegExp(r'\\(begin|end)\{.*?\}|\\[a-zA-Z]+|\$.*?\$');
+    // Check if the text contains LaTeX commands or is already wrapped in $
+    if (latexCommandRegex.hasMatch(text) &&
+        !text.startsWith('\$') &&
+        !text.endsWith('\$')) {
+      // Wrap with $$ if it seems to be LaTeX but isn't already wrapped
       return '\$\$$text\$\$';
     }
+    return text;
   }
 
   @override
@@ -83,15 +88,14 @@ class _LatexToggleState extends State<LatexToggle> {
                 ],
               ),
             ),
-          if (widget.latexController.text.isNotEmpty)
-            IconButton(
-              icon: const Icon(Icons.toggle_on),
-              onPressed: () {
-                setState(() {
-                  _isLatexVisible = !_isLatexVisible;
-                });
-              },
-            ),
+          IconButton(
+            icon: const Icon(Icons.toggle_on),
+            onPressed: () {
+              setState(() {
+                _isLatexVisible = !_isLatexVisible;
+              });
+            },
+          ),
         ],
       ),
     );

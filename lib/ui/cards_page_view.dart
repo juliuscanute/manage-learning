@@ -7,6 +7,8 @@ import 'package:manage_learning/ui/deck_bloc.dart';
 import 'package:manage_learning/ui/deck_event.dart';
 import 'package:manage_learning/ui/deck_state.dart';
 import 'package:manage_learning/ui/latex_toggle.dart';
+import 'package:manage_learning/ui/mcq_controller.dart';
+import 'package:manage_learning/ui/mcq_view.dart';
 import 'package:path/path.dart';
 import 'package:provider/provider.dart';
 
@@ -253,6 +255,14 @@ class CardsPageView extends StatelessWidget {
                 const SizedBox(height: 8),
                 _buildImagePicker(
                     controller, 'Pick Recall Image', context, state, false),
+                const SizedBox(height: 16),
+                ExpansionTile(
+                  title: const Text(
+                      'MCQ Options'), // Title for the expandable section
+                  children: [
+                    MCQView(mcqController: controller['mcq'] as MCQController),
+                  ],
+                ),
                 const SizedBox(height: 16),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
