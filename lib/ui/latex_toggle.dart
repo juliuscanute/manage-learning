@@ -20,14 +20,9 @@ class _LatexToggleState extends State<LatexToggle> {
   bool _isLatexVisible = false;
 
   String ensureLatexSyntax(String text) {
-    // This regex looks for common LaTeX commands and environments
-    final latexCommandRegex =
-        RegExp(r'\\(begin|end)\{.*?\}|\\[a-zA-Z]+|\$.*?\$');
-    // Check if the text contains LaTeX commands or is already wrapped in $
-    if (latexCommandRegex.hasMatch(text) &&
-        !text.startsWith('\$') &&
-        !text.endsWith('\$')) {
-      // Wrap with $$ if it seems to be LaTeX but isn't already wrapped
+    // Simple check to see if it might be a mathematical expression
+    if (!text.startsWith('\$') && !text.endsWith('\$')) {
+      // Wrap with $$ if it's not already wrapped
       return '\$\$$text\$\$';
     }
     return text;
