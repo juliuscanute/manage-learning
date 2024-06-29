@@ -34,55 +34,51 @@ class _LatexToggleState extends State<LatexToggle> {
       constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width),
       child: Row(
         children: [
-          if (!_isLatexVisible)
-            Expanded(
-              child: TextField(
-                controller: widget.normalController,
-                decoration: InputDecoration(
-                  labelText: widget.label,
-                  border: const OutlineInputBorder(),
-                ),
-                readOnly: _isLatexVisible,
-              ),
-            ),
-          if (_isLatexVisible)
-            Expanded(
-              child: Row(
-                children: [
-                  Expanded(
-                    flex: 1,
-                    child: TextField(
-                      controller: widget.latexController,
-                      decoration: InputDecoration(
-                        labelText: 'Edit ${widget.label} LaTeX',
-                        border: const OutlineInputBorder(),
-                      ),
-                      onChanged: (value) {
-                        setState(() {});
-                      },
+          Expanded(
+            child: Column(
+              children: [
+                if (!_isLatexVisible)
+                  TextField(
+                    controller: widget.normalController,
+                    decoration: InputDecoration(
+                      labelText: widget.label,
+                      border: const OutlineInputBorder(),
                     ),
+                    readOnly: _isLatexVisible,
                   ),
-                  Expanded(
-                    flex: 1,
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 8.0),
-                      child: TeXView(
-                        child: TeXViewDocument(
-                          widget.latexController.text.isNotEmpty
-                              ? ensureLatexSyntax(widget.latexController.text)
-                              : r'\text{No LaTeX content}',
-                          style: const TeXViewStyle(
-                            backgroundColor: Colors.transparent,
-                            contentColor: Colors.black,
-                          ),
+                if (_isLatexVisible)
+                  Column(
+                    children: [
+                      TextField(
+                        controller: widget.latexController,
+                        decoration: InputDecoration(
+                          labelText: 'Edit ${widget.label} LaTeX',
+                          border: const OutlineInputBorder(),
                         ),
-                        renderingEngine: const TeXViewRenderingEngine.katex(),
+                        onChanged: (value) {
+                          setState(() {});
+                        },
                       ),
-                    ),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: TeXView(
+                          child: TeXViewDocument(
+                            widget.latexController.text.isNotEmpty
+                                ? ensureLatexSyntax(widget.latexController.text)
+                                : r'\text{No LaTeX content}',
+                            style: const TeXViewStyle(
+                              backgroundColor: Colors.transparent,
+                              contentColor: Colors.black,
+                            ),
+                          ),
+                          renderingEngine: const TeXViewRenderingEngine.katex(),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+              ],
             ),
+          ),
           IconButton(
             icon: const Icon(Icons.toggle_on),
             onPressed: () {
