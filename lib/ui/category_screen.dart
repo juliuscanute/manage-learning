@@ -33,7 +33,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
           title: Text(widget.categoryList.last),
           actions: [
             IconButton(
-              icon: Icon(Icons.logout),
+              icon: const Icon(Icons.logout),
               onPressed: () async {
                 await FirebaseAuth.instance.signOut();
                 Navigator.of(context).pushReplacementNamed('/login');
@@ -45,11 +45,11 @@ class _CategoryScreenState extends State<CategoryScreen> {
           stream: _firebaseService.getDecksStream(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return Center(child: CircularProgressIndicator());
+              return const Center(child: CircularProgressIndicator());
             }
 
             if (!snapshot.hasData || snapshot.data == null) {
-              return Center(child: Text('No decks found'));
+              return const Center(child: Text('No decks found'));
             }
 
             final decks = snapshot.data ?? widget.decks;
@@ -100,7 +100,30 @@ class _CategoryScreenState extends State<CategoryScreen> {
               children.add(DeckListItem(deck: deck));
             });
 
-            return ListView(children: children);
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                // Calculate the number of columns based on screen width
+                int crossAxisCount = constraints.maxWidth > 600
+                    ? 4
+                    : 1; // Example breakpoint at 600px
+
+                // Calculate the width of each child based on the number of columns
+                double width =
+                    (constraints.maxWidth - (crossAxisCount - 1) * 10) /
+                        crossAxisCount;
+
+                return Wrap(
+                  spacing: 10, // Horizontal space between items
+                  runSpacing: 10, // Vertical space between items
+                  children: List.generate(children.length, (index) {
+                    return Container(
+                      width: width,
+                      child: children[index], // Child widget is directly used
+                    );
+                  }),
+                );
+              },
+            );
           },
         ));
   }

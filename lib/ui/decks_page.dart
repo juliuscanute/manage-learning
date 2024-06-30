@@ -92,12 +92,28 @@ class _DecksPageWidgetState extends State<DecksPage> {
             children.add(DeckListItem(deck: deck));
           });
 
-          return Center(
-            child: ConstrainedBox(
-              constraints:
-                  BoxConstraints(maxWidth: 600), // Max width of the cards
-              child: ListView(children: children),
-            ),
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              // Calculate the number of columns based on screen width
+              int crossAxisCount = constraints.maxWidth > 800 ? 4 : 1;
+
+              // Calculate the width of each child based on the number of columns
+              double width =
+                  (constraints.maxWidth - (crossAxisCount - 1) * 10) /
+                      crossAxisCount;
+
+              return Wrap(
+                spacing: 10, // Horizontal space between items
+                runSpacing: 10, // Vertical space between items
+                children: List.generate(children.length, (index) {
+                  return SizedBox(
+                    width: width,
+                    // Height is not specified to allow content to determine the height
+                    child: children[index],
+                  );
+                }),
+              );
+            },
           );
         },
       ),
