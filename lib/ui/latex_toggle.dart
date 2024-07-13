@@ -20,12 +20,7 @@ class _LatexToggleState extends State<LatexToggle> {
   bool _isLatexVisible = false;
 
   String ensureLatexSyntax(String text) {
-    // Simple check to see if it might be a mathematical expression
-    if (!text.startsWith('\$') && !text.endsWith('\$')) {
-      // Wrap with $$ if it's not already wrapped
-      return '\$\$$text\$\$';
-    }
-    return text;
+    return '<p>$text</p>';
   }
 
   @override
@@ -71,7 +66,7 @@ class _LatexToggleState extends State<LatexToggle> {
                               contentColor: Colors.black,
                             ),
                           ),
-                          renderingEngine: const TeXViewRenderingEngine.katex(),
+                          renderingEngine: const TeXViewRenderingEngine.mathjax(),
                         ),
                       ),
                     ],
