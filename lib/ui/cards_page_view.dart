@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:manage_learning/data/firebase_service.dart';
@@ -71,7 +74,7 @@ class CardsPageView extends StatelessWidget {
                       ),
                     ),
                   ),
-                  _buildButtonRow(context),
+                  _buildButtonRow(context, state),
                 ],
               ),
               if (state.isLoading)
@@ -394,7 +397,7 @@ class CardsPageView extends StatelessWidget {
     }
   }
 
-  Widget _buildButtonRow(BuildContext context) {
+  Widget _buildButtonRow(BuildContext context, DeckState state) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       decoration: BoxDecoration(
@@ -444,8 +447,65 @@ class CardsPageView extends StatelessWidget {
               ),
             ),
           ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(left: 8.0),
+              child: ElevatedButton(
+                onPressed: () => _generateJsonAndCopy(context, state),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20)),
+                ),
+                child: const Text('Export JSON'),
+              ),
+            ),
+          ),
         ],
       ),
+    );
+  }
+
+  void _generateJsonAndCopy(BuildContext context, DeckState state) {
+    Map<String, dynamic> deckJson = {
+      'title': state.deckTitleController.text,
+      'flashcards': state.cardControllers.map((card) {
+        final mcqController = card['mcq'] as MCQController?;
+
+        // Extract text from each TextEditingController in optionsControllers and optionsTexControllers
+        final options = mcqController?.optionsControllers
+                .map((controller) => controller.text)
+                .toList() ??
+            [];
+        final optionsTex = mcqController?.optionsTexControllers
+                .map((controller) => controller.text)
+                .toList() ??
+            [];
+        final answerIndex =
+            int.tryParse(mcqController?.answerIndexController.text ?? '0');
+
+        return {
+          'front': card['front'].text,
+          'back': card['back'].text,
+          'front_tex': card['frontTex']?.text,
+          'back_tex': card['backTex']?.text,
+          'mcq': mcqController != null
+              ? {
+                  'options': options,
+                  'options_tex': optionsTex,
+                  'answer_index': answerIndex,
+                }
+              : null,
+        };
+      }).toList(),
+    };
+
+    String jsonString = jsonEncode(deckJson);
+    Clipboard.setData(ClipboardData(text: jsonString));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('JSON copied to clipboard!')),
     );
   }
 }
