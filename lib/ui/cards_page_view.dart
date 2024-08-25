@@ -505,7 +505,7 @@ class CardsPageView extends StatelessWidget {
                   'answer_index': answerIndex,
                 }
               : null,
-          'explanation': card['explanation'].text,
+          'explanation': card['explanation']?.text,
           'explanation_tex': card['explanationTex']?.text,
         };
       }).toList(),
