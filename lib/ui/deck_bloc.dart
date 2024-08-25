@@ -82,6 +82,10 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
                   'position': cardData['position'],
                   'imageUrl': cardData['imageUrl'] ?? '',
                   'mcq': MCQController.fromMap(cardData['mcq'] ?? {}),
+                  'explanation': TextEditingController(
+                      text: cardData['explanation'] ?? ''),
+                  'explanationTex': TextEditingController(
+                      text: cardData['explanation_tex'] ?? ''),
                 })
             .toList()
           ..sort(
@@ -120,6 +124,8 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
             'backTex': TextEditingController(),
             'position': state.cardControllers.length,
             'mcq': MCQController.initialize(),
+            'explanation': TextEditingController(),
+            'explanationTex': TextEditingController(),
           });
 
     emit(state.copyWith(cardControllers: updatedControllers));
@@ -174,6 +180,8 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
           controllers['backTex']!.text,
           controllers['imageUrl'],
           (controllers['mcq'] as MCQController).toMap(),
+          controllers['explanation']!.text,
+          controllers['explanationTex']!.text,
           i,
         );
         print('Card $i added');
@@ -216,6 +224,8 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
                   'imageUrl': e['imageUrl'],
                   'position': e['position'],
                   'mcq': (e['mcq'] as MCQController).toMap(),
+                  'explanation': e['explanation'].text,
+                  'explanation_tex': e['explanationTex'].text,
                 })
             .toList(),
         tags,
@@ -322,6 +332,8 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
             'imageName': '',
             'imageUrl': '',
             'mcq': MCQController.initialize(),
+            'explanation': TextEditingController(),
+            'explanationTex': TextEditingController(),
           });
 
     for (int i = 0; i < updatedControllers.length; i++) {
@@ -344,6 +356,8 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
             'imageName': '',
             'imageUrl': '',
             'mcq': MCQController.initialize(),
+            'explanation': TextEditingController(),
+            'explanationTex': TextEditingController(),
           });
 
     for (int i = 0; i < updatedControllers.length; i++) {
@@ -375,6 +389,9 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
                   'answer_index': flashcard['mcq']['answer_index'],
                 }
               : {}),
+          'explanation': TextEditingController(text: flashcard['explanation']),
+          'explanationTex':
+              TextEditingController(text: flashcard['explanation_tex']),
         };
       }).toList();
 

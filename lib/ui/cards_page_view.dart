@@ -256,6 +256,13 @@ class CardsPageView extends StatelessWidget {
                   label: 'Back',
                 ),
                 const SizedBox(height: 8),
+                LatexToggle(
+                  normalController:
+                      controller['explanation'] as TextEditingController,
+                  latexController:
+                      controller['explanationTex'] as TextEditingController,
+                  label: 'Explanation',
+                ),
                 _buildImagePicker(
                     controller, 'Pick Recall Image', context, state, false),
                 const SizedBox(height: 16),
@@ -498,6 +505,8 @@ class CardsPageView extends StatelessWidget {
                   'answer_index': answerIndex,
                 }
               : null,
+          'explanation': card['explanation'].text,
+          'explanation_tex': card['explanationTex']?.text,
         };
       }).toList(),
     };

@@ -70,6 +70,8 @@ class FirebaseService {
               'position':
                   doc.data()['position'] ?? index, // Use map index as fallback
               'mcq': doc.data()['mcq'] ?? {},
+              'explanation': doc.data()['explanation'] ?? '',
+              'explanation_tex': doc.data()['explanation_tex'] ?? '',
             }))
         .values // Convert back to iterable
         .toList();
@@ -225,7 +227,9 @@ class FirebaseService {
               originalCard['back_tex'] != card['back_tex'] ||
               originalCard['imageUrl'] != card['imageUrl'] ||
               originalCard['position'] != card['position']) ||
-          originalCard['mcq'] != card['mcq'];
+          originalCard['mcq'] != card['mcq'] ||
+          originalCard['explanation'] != card['explanation'] ||
+          originalCard['explanation_tex'] != card['explanation_tex'];
 
       if (card.containsKey('id') && card['id'] != null && isModified) {
         // Existing card, update
@@ -238,6 +242,8 @@ class FirebaseService {
           'imageUrl': card['imageUrl'],
           'position': card['position'],
           'mcq': card['mcq'],
+          'explanation': card['explanation'],
+          'explanation_tex': card['explanation_tex'],
         });
       } else if (!card.containsKey('id') || card['id'] == null) {
         // New card, add
@@ -250,6 +256,8 @@ class FirebaseService {
           'imageUrl': card['imageUrl'],
           'position': card['position'],
           'mcq': card['mcq'],
+          'explanation': card['explanation'],
+          'explanation_tex': card['explanation_tex'],
         });
       }
     }
@@ -322,6 +330,8 @@ class FirebaseService {
       String? backTex,
       String? imageUrl,
       Map<String, dynamic> mcq,
+      String? explanation,
+      String? explanationTex,
       int position) async {
     await _firestore.collection('decks').doc(deckId).collection('cards').add({
       'front': front,
@@ -331,6 +341,8 @@ class FirebaseService {
       'imageUrl': imageUrl, // Include the image URL in the saved data
       'position': position, // Include the position in the saved data
       'mcq': mcq,
+      'explanation': explanation,
+      'explanation_tex': explanationTex,
     });
   }
 
