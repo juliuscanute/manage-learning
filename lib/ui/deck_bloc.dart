@@ -26,7 +26,21 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
             tagsController: TextEditingController(),
             jsonController: TextEditingController(),
             mindmapImageController: const {'image': null, 'imageUrl': ''},
-            cardControllers: [],
+            cardControllers: [
+              {
+                'front': TextEditingController(),
+                'frontTex': TextEditingController(),
+                'back': TextEditingController(),
+                'backTex': TextEditingController(),
+                'position': 0,
+                'image': null,
+                'imageName': '',
+                'imageUrl': '',
+                'mcq': MCQController.initialize(),
+                'explanation': TextEditingController(),
+                'explanationTex': TextEditingController(),
+              }
+            ],
             isEvaluatorStrict: true,
             isPublic: false,
             finishSave: false,
@@ -119,10 +133,13 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
         List<Map<String, dynamic>>.from(state.cardControllers)
           ..add({
             'front': TextEditingController(),
-            'fontTex': TextEditingController(),
+            'frontTex': TextEditingController(),
             'back': TextEditingController(),
             'backTex': TextEditingController(),
             'position': state.cardControllers.length,
+            'image': null,
+            'imageName': '',
+            'imageUrl': '',
             'mcq': MCQController.initialize(),
             'explanation': TextEditingController(),
             'explanationTex': TextEditingController(),
