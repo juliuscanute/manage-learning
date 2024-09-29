@@ -29,7 +29,6 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     // Determine screen size
-    var screenSize = MediaQuery.of(context).size;
 
     return Scaffold(
       appBar: AppBar(title: const Text('John Louis Academy for learners')),

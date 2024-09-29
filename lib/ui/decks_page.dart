@@ -6,7 +6,6 @@ import 'package:manage_learning/data/firebase_service.dart';
 import 'package:manage_learning/ui/category_card.dart';
 import 'package:manage_learning/ui/deck_list_item.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class DecksPage extends StatefulWidget {
   const DecksPage({super.key});

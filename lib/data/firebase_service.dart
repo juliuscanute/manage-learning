@@ -72,6 +72,7 @@ class FirebaseService {
               'mcq': doc.data()['mcq'] ?? {},
               'explanation': doc.data()['explanation'] ?? '',
               'explanation_tex': doc.data()['explanation_tex'] ?? '',
+              'mnemonic': doc.data()['mnemonic'] ?? '',
             }))
         .values // Convert back to iterable
         .toList();
@@ -229,7 +230,8 @@ class FirebaseService {
               originalCard['position'] != card['position']) ||
           originalCard['mcq'] != card['mcq'] ||
           originalCard['explanation'] != card['explanation'] ||
-          originalCard['explanation_tex'] != card['explanation_tex'];
+          originalCard['explanation_tex'] != card['explanation_tex'] ||
+          originalCard['mnemonic'] != card['mnemonic'];
 
       if (card.containsKey('id') && card['id'] != null && isModified) {
         // Existing card, update
@@ -244,6 +246,7 @@ class FirebaseService {
           'mcq': card['mcq'],
           'explanation': card['explanation'],
           'explanation_tex': card['explanation_tex'],
+          'mnemonic': card['mnemonic'],
         });
       } else if (!card.containsKey('id') || card['id'] == null) {
         // New card, add
@@ -258,6 +261,7 @@ class FirebaseService {
           'mcq': card['mcq'],
           'explanation': card['explanation'],
           'explanation_tex': card['explanation_tex'],
+          'mnemonic': card['mnemonic'],
         });
       }
     }
@@ -332,6 +336,7 @@ class FirebaseService {
       Map<String, dynamic> mcq,
       String? explanation,
       String? explanationTex,
+      String? mnemonic,
       int position) async {
     await _firestore.collection('decks').doc(deckId).collection('cards').add({
       'front': front,
@@ -343,6 +348,7 @@ class FirebaseService {
       'mcq': mcq,
       'explanation': explanation,
       'explanation_tex': explanationTex,
+      'mnemonic': mnemonic,
     });
   }
 

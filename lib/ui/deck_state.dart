@@ -32,6 +32,7 @@ class DeckState extends Equatable {
     TextEditingController? videoUrlController,
     TextEditingController? tagsController,
     TextEditingController? jsonController,
+    TextEditingController? metaController,
     Map<String, dynamic>? mindmapImageController,
     List<Map<String, dynamic>>? cardControllers,
     bool? isEvaluatorStrict,

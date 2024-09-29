@@ -102,3 +102,11 @@ class UpdateJsonDeck extends DeckEvent {
   @override
   List<Object?> get props => [jsonDeck];
 }
+
+class UpdateMetaData extends DeckEvent {
+  final String jsonMetaData;
+  UpdateMetaData(this.jsonMetaData);
+
+  @override
+  List<Object?> get props => [jsonMetaData];
+}

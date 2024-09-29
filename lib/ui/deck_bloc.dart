@@ -39,6 +39,7 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
                 'mcq': MCQController.initialize(),
                 'explanation': TextEditingController(),
                 'explanationTex': TextEditingController(),
+                'mnemonic': TextEditingController(),
               }
             ],
             isEvaluatorStrict: true,
@@ -58,6 +59,7 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
     on<AddCardAbove>(_onAddCardAbove);
     on<AddCardBelow>(_onAddCardBelow);
     on<UpdateJsonDeck>(_onUpdateJsonDeck);
+    on<UpdateMetaData>(_applyMetaData);
   }
 
   Future<void> _onLoadDeckData(
@@ -100,6 +102,8 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
                       text: cardData['explanation'] ?? ''),
                   'explanationTex': TextEditingController(
                       text: cardData['explanation_tex'] ?? ''),
+                  'mnemonic':
+                      TextEditingController(text: cardData['mnemonic'] ?? ''),
                 })
             .toList()
           ..sort(
@@ -143,6 +147,7 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
             'mcq': MCQController.initialize(),
             'explanation': TextEditingController(),
             'explanationTex': TextEditingController(),
+            'mnemonic': TextEditingController(),
           });
 
     emit(state.copyWith(cardControllers: updatedControllers));
@@ -199,6 +204,7 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
           (controllers['mcq'] as MCQController).toMap(),
           controllers['explanation']!.text,
           controllers['explanationTex']!.text,
+          controllers['mnemonic']!.text,
           i,
         );
         print('Card $i added');
@@ -243,6 +249,7 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
                   'mcq': (e['mcq'] as MCQController).toMap(),
                   'explanation': e['explanation'].text,
                   'explanation_tex': e['explanationTex'].text,
+                  'mnemonic': e['mnemonic'].text,
                 })
             .toList(),
         tags,
@@ -351,6 +358,7 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
             'mcq': MCQController.initialize(),
             'explanation': TextEditingController(),
             'explanationTex': TextEditingController(),
+            'mnemonic': TextEditingController(),
           });
 
     for (int i = 0; i < updatedControllers.length; i++) {
@@ -375,6 +383,7 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
             'mcq': MCQController.initialize(),
             'explanation': TextEditingController(),
             'explanationTex': TextEditingController(),
+            'mnemonic': TextEditingController(),
           });
 
     for (int i = 0; i < updatedControllers.length; i++) {
@@ -409,11 +418,40 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
           'explanation': TextEditingController(text: flashcard['explanation']),
           'explanationTex':
               TextEditingController(text: flashcard['explanation_tex']),
+          'mnemonic': TextEditingController(text: flashcard['mnemonic']),
         };
       }).toList();
 
       emit(state.copyWith(
         deckTitleController: TextEditingController(text: jsonData['title']),
+        cardControllers: List<Map<String, dynamic>>.from(updatedControllers),
+      ));
+    } catch (e) {
+      print("Error parsing JSON: $e");
+    } finally {
+      emit(state.copyWith(isLoading: false));
+    }
+  }
+
+  void _applyMetaData(UpdateMetaData event, Emitter<DeckState> emit) {
+    try {
+      emit(state.copyWith(isLoading: true));
+      final Map<String, dynamic> jsonData = jsonDecode(event.jsonMetaData);
+      final metaData =
+          jsonData['metaData'] ?? []; // Provide a default empty list if null
+
+      final updatedControllers = state.cardControllers.map((controller) {
+        final front = controller['front'].text;
+        final meta = metaData.firstWhere((meta) => meta['front'] == front,
+            orElse: () => null);
+        if (meta != null) {
+          controller['mnemonic'] =
+              TextEditingController(text: meta['mnemonic']);
+        }
+        return controller;
+      }).toList();
+
+      emit(state.copyWith(
         cardControllers: List<Map<String, dynamic>>.from(updatedControllers),
       ));
     } catch (e) {
