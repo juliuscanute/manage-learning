@@ -43,7 +43,7 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
               }
             ],
             isEvaluatorStrict: true,
-            isPublic: false,
+            isPublic: true,
             finishSave: false,
           ),
         ) {
