@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:manage_learning/data/firebase_service.dart';
+import 'package:manage_learning/ui/blogs_create.dart';
 import 'package:manage_learning/ui/category_screen.dart';
 import 'package:manage_learning/ui/decks_page.dart';
 import 'package:manage_learning/ui/cards_page_view.dart';
@@ -103,6 +104,9 @@ class MyApp extends StatelessWidget {
                 } else if (settings.name == '/smart-deck') {
                   return const CardsPageView(
                       deckId: null, operation: DeckOperation.load);
+                } else if (settings.name == '/blog-updates') {
+                  final data = settings.arguments as BlogData;
+                  return BlogCreateEdit(blogData: data);
                 }
                 return Container();
               },
