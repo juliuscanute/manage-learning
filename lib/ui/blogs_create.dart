@@ -169,6 +169,45 @@ class _BlogCreateEditState extends State<BlogCreateEdit> {
                   return Markdown(
                     data: markdownContent,
                     selectable: true,
+                    imageBuilder: (uri, title, alt) {
+                      String modifiedUri = uri
+                          .toString()
+                          .replaceFirst('blog_images/', 'blog_images%2F');
+                      return Image.network(
+                        modifiedUri,
+                        loadingBuilder: (BuildContext context, Widget child,
+                            ImageChunkEvent? loadingProgress) {
+                          if (loadingProgress == null) {
+                            return child;
+                          } else {
+                            return Center(
+                              child: CircularProgressIndicator(
+                                value: loadingProgress.expectedTotalBytes !=
+                                        null
+                                    ? loadingProgress.cumulativeBytesLoaded /
+                                        (loadingProgress.expectedTotalBytes ??
+                                            1)
+                                    : null,
+                              ),
+                            );
+                          }
+                        },
+                        errorBuilder: (BuildContext context, Object error,
+                            StackTrace? stackTrace) {
+                          return Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.error, color: Colors.red),
+                                SizedBox(height: 8),
+                                Text('Failed to load image',
+                                    style: TextStyle(color: Colors.red)),
+                              ],
+                            ),
+                          );
+                        },
+                      );
+                    },
                   );
                 },
               ),
