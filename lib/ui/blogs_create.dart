@@ -194,7 +194,7 @@ class _BlogCreateEditState extends State<BlogCreateEdit> {
                         },
                         errorBuilder: (BuildContext context, Object error,
                             StackTrace? stackTrace) {
-                          return Center(
+                          return const Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [

@@ -115,7 +115,8 @@ class BlogBloc extends Bloc<BlogEvent, BlogState> {
 
         // Process and upload new images in the updated markdown
         for (String url in updatedImageUrls) {
-          if (url.contains('localhost')) {
+          if (url.contains('localhost') ||
+              url.contains('manage-learning.web.app')) {
             final XFile imageFile = XFile(url);
             final String downloadUrl = await _repository.uploadImage(imageFile);
             markdown = markdown.replaceAll(url, downloadUrl);
