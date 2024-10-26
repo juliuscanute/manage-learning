@@ -440,10 +440,11 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
       final metaData =
           jsonData['metaData'] ?? []; // Provide a default empty list if null
 
-      final updatedControllers = state.cardControllers.map((controller) {
-        final front = controller['front'].text;
-        final meta = metaData.firstWhere((meta) => meta['front'] == front,
-            orElse: () => null);
+      final updatedControllers =
+          state.cardControllers.asMap().entries.map((entry) {
+        final index = entry.key;
+        final controller = entry.value;
+        final meta = metaData.length > index ? metaData[index] : null;
         if (meta != null) {
           controller['mnemonic'] =
               TextEditingController(text: meta['mnemonic']);
