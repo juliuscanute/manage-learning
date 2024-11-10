@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:manage_learning/ui/blogs_create.dart';
 import 'package:manage_learning/ui/blogs_widget.dart';
+import 'package:manage_learning/ui/category_screen_new.dart';
 import 'package:manage_learning/ui/decs_widget.dart';
 
 class DecksPage extends StatefulWidget {
@@ -69,7 +70,7 @@ class _DecksPageWidgetState extends State<DecksPage>
       body: TabBarView(
         controller: _tabController,
         children: const [
-          DecksWidget(),
+          CategoryScreenNew(),
           BlogsWidget(),
         ],
       ),

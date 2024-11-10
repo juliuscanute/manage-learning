@@ -5,6 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:manage_learning/data/firebase_service.dart';
 import 'package:manage_learning/ui/blogs_create.dart';
 import 'package:manage_learning/ui/category_screen.dart';
+import 'package:manage_learning/ui/category_screen_subfolder_new.dart';
 import 'package:manage_learning/ui/decks_page.dart';
 import 'package:manage_learning/ui/cards_page_view.dart';
 import 'package:manage_learning/ui/login_screen.dart';
@@ -95,6 +96,16 @@ class MyApp extends StatelessWidget {
                     deckId: settings.arguments as String,
                     operation: DeckOperation.edit,
                   );
+                } else if (settings.name == '/category-screen-new') {
+                  final args = settings.arguments as Map<String, dynamic>;
+                  final parentPath = args['parentPath'] as String;
+                  final subFolders =
+                      args['subFolders'] as List<Map<String, dynamic>>;
+                  final parentId = args['folderId'] as String;
+                  return SubfolderScreen(
+                      parentFolderName: parentId,
+                      parentPath: parentPath,
+                      subFolders: subFolders);
                 } else if (settings.name == '/category-screen') {
                   final args = settings.arguments as Map<String, dynamic>;
                   final decks = args['decks'] as List<Map<String, dynamic>>;

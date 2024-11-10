@@ -3,16 +3,16 @@ import 'package:manage_learning/data/firebase_service.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class DeckListItem extends StatefulWidget {
+class DeckListItemNew extends StatefulWidget {
   final Map<String, dynamic> deck;
 
-  DeckListItem({required this.deck});
+  DeckListItemNew({required this.deck});
 
   @override
-  _DeckListItemState createState() => _DeckListItemState();
+  _DeckListItemNewState createState() => _DeckListItemNewState();
 }
 
-class _DeckListItemState extends State<DeckListItem> {
+class _DeckListItemNewState extends State<DeckListItemNew> {
   late FirebaseService _firebaseService;
 
   @override
@@ -28,12 +28,15 @@ class _DeckListItemState extends State<DeckListItem> {
         icon: const Icon(Icons.edit),
         onPressed: () {
           Navigator.of(context)
-              .pushNamed('/editcards', arguments: widget.deck['id']);
+              .pushNamed('/editcards', arguments: widget.deck['deckId']);
         },
       ),
       IconButton(
         icon: const Icon(Icons.delete),
-        onPressed: () => _firebaseService.deleteDeck(widget.deck['id'], '', ''),
+        onPressed: () async {
+          await _firebaseService.deleteDeck(widget.deck['deckId'],
+              widget.deck['parentPath'], widget.deck['folderId']);
+        },
       ),
       IconButton(
         icon: const Icon(Icons.copy),

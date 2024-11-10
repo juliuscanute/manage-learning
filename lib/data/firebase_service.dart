@@ -38,6 +38,62 @@ class FirebaseService {
     });
   }
 
+  // Method to read all top level folders from the Firestore
+  // Path: /folder/
+  Future<List<Map<String, dynamic>>> getFolders() async {
+    try {
+      var folders = <Map<String, dynamic>>[];
+      var folderSnapshot = await _firestore.collection('folder').get();
+      for (var folder in folderSnapshot.docs) {
+        folders.add({
+          'id': folder.id,
+          'name': folder.data()['name'] ?? '',
+        });
+      }
+      return folders;
+    } catch (error) {
+      print('Error reading folders from Firestore: $error');
+      return [];
+    }
+  }
+
+// Method to read subfolders of a folder from Firestore
+// /folder/{folderId}/subfolder/ - Returns subfolder in this collection
+// /folder/{folderId}/subfolder/{subfolderId}/subfolder - Returns subfolder in this collection
+// Input will contain the parent path with id
+  Future<List<Map<String, dynamic>>> getSubFolders(String parentPath) async {
+    try {
+      var subFolders = <Map<String, dynamic>>[];
+      var subFolderSnapshot = await _firestore.collection(parentPath).get();
+
+      for (var subFolder in subFolderSnapshot.docs) {
+        var folderData = subFolder.data();
+        if (folderData['hasSubfolders'] == true) {
+          subFolders.add({
+            'id': subFolder.id,
+            'name': folderData['name'] ?? '',
+            'hasSubfolders': true,
+          });
+        } else {
+          subFolders.add({
+            'id': subFolder.id,
+            'name': folderData['name'] ?? '',
+            'deckId': folderData['deckId'] ?? '',
+            'title': folderData['title'] ?? '',
+            'isPublic': folderData['isPublic'] ?? false,
+            'type': 'card',
+            'hasSubfolders': false,
+          });
+        }
+      }
+
+      return subFolders;
+    } catch (error) {
+      print('Error reading subfolders from Firestore: $error');
+      return [];
+    }
+  }
+
   Future<Map<String, dynamic>> getDeckData(String deckId) async {
     var deckData = <String, dynamic>{};
 
@@ -84,17 +140,68 @@ class FirebaseService {
   Future<String> createDeck(
       String title, List<String> tags, bool exactMatch, bool isPublic) async {
     try {
+      // Create the deck in the final collection
+
       var newDeckRef = await _firestore.collection('decks').add({
         'title': title,
         'tags': tags,
         'exactMatch': exactMatch,
         'isPublic': isPublic, // Add isPublic here
       });
-      return newDeckRef.id;
+      final deckId = newDeckRef.id;
+      await _createTagPath(tags, deckId, title, exactMatch, isPublic);
+      return deckId;
     } catch (e) {
       print("Error creating deck: $e");
       return '';
     }
+  }
+
+  Future<void> _createTagPath(List<String> tags, String deckId, String title,
+      bool exactMatch, bool isPublic) async {
+    // Start with the root collection
+    CollectionReference currentRef = _firestore.collection('folder');
+
+    // If tags are empty, place in "OTHERS" folder
+    if (tags.isEmpty) {
+      final othersDoc = currentRef.doc('OTHERS');
+      final othersSnapshot = await othersDoc.get();
+      if (!othersSnapshot.exists) {
+        await othersDoc.set({
+          'name': 'OTHERS',
+          'hasSubfolders': false,
+        });
+      }
+      currentRef = othersDoc.collection('subfolders');
+    } else {
+      // Navigate through the tags to construct the path
+      for (int i = 0; i < tags.length; i++) {
+        final tag = tags[i];
+        final folderDoc = currentRef.doc(tag);
+        final folderSnapshot = await folderDoc.get();
+        if (!folderSnapshot.exists) {
+          await folderDoc.set({
+            'name': tag,
+            'hasSubfolders': true,
+          });
+        } else {
+          await folderDoc.update({'hasSubfolders': true});
+        }
+        // Move to the next subfolder collection
+        currentRef = folderDoc.collection('subfolders');
+      }
+    }
+
+    final finalDocRef = currentRef.doc();
+    await finalDocRef.set({
+      'title': title,
+      'deckId': deckId,
+      'tags': tags,
+      'exactMatch': exactMatch,
+      'isPublic': isPublic,
+      'type': 'card',
+      'hasSubfolders': false,
+    });
   }
 
   Future<String> duplicateDeck(Map<String, dynamic> deck) async {
@@ -313,7 +420,8 @@ class FirebaseService {
         .delete();
   }
 
-  Future<void> deleteDeck(String deckId) async {
+  Future<void> deleteDeck(
+      String deckId, String parentPath, String folderId) async {
     var cardsSnapshot = await _firestore
         .collection('decks')
         .doc(deckId)
@@ -324,6 +432,44 @@ class FirebaseService {
       deleteImage(imageUrl);
     }
     await _firestore.collection('decks').doc(deckId).delete();
+    await deleteFolderIfEmpty(parentPath, folderId);
+  }
+
+  Future<void> deleteFolderIfEmpty(String parentPath, String folderId) async {
+    try {
+      // Reference to the folder document
+      final folderDocRef = _firestore.collection(parentPath).doc(folderId);
+
+      // Check if the folder has any subcollections
+      final subcollections = await folderDocRef.collection('subfolders').get();
+      if (subcollections.docs.isNotEmpty) {
+        // Folder has subcollections, do not delete
+        return;
+      }
+
+      // Check if the folder has any documents
+      final folderSnapshot = await folderDocRef.get();
+      if (!folderSnapshot.exists) {
+        // Folder does not exist, nothing to delete
+        return;
+      }
+
+      // Delete the folder document
+      await folderDocRef.delete();
+
+      // Recursively check and delete parent folders if they become empty
+      final parentSegments = parentPath.split('/');
+      if (parentSegments.length > 2) {
+        // Remove the last two segments to move one level up
+        parentSegments.removeLast(); // Remove the "subfolders" keyword
+        final parentFolderId =
+            parentSegments.removeLast(); // Remove the folder ID
+        final newParentPath = parentSegments.join('/');
+        await deleteFolderIfEmpty(newParentPath, parentFolderId);
+      }
+    } catch (e) {
+      print("Error deleting folder: $e");
+    }
   }
 
   Future<void> addCard(
