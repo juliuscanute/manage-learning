@@ -26,7 +26,14 @@ class MoveCard extends DeckEvent {
 
 class AddCardController extends DeckEvent {}
 
-class SaveDeckAndCards extends DeckEvent {}
+class SaveDeckAndCards extends DeckEvent {
+  final Map<String, dynamic> deck;
+
+  SaveDeckAndCards(this.deck);
+
+  @override
+  List<Object?> get props => [deck];
+}
 
 class UpdateEvaluatorStrictness extends DeckEvent {
   final bool isStrict;

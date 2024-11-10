@@ -20,35 +20,10 @@ class _CategoryScreenNewState extends State<CategoryScreenNew> {
     _firebaseService = Provider.of<FirebaseService>(context, listen: false);
   }
 
-  Future<void> _fetchSubFolders(String folderId) async {
-    final subFolders =
-        await _firebaseService.getSubFolders('folder/$folderId/subfolders');
-    Navigator.pushNamed(
-      context,
-      "/category-screen-new",
-      arguments: {
-        'parentPath': 'folder/$folderId/subfolders',
-        'subFolders': subFolders,
-      },
-    );
-  }
-
-  Future<void> _fetchLeafNode(
-      String parentPath, Map<String, dynamic> leafNode) async {
-    Navigator.pushNamed(
-      context,
-      "/leaf-node-screen",
-      arguments: {
-        'parentPath': parentPath,
-        'leafNode': leafNode,
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<Map<String, dynamic>>>(
-      future: _firebaseService.getFolders(),
+    return StreamBuilder<List<Map<String, dynamic>>>(
+      stream: _firebaseService.getFoldersStream(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
 
@@ -17,7 +18,7 @@ class Deck {
   });
 }
 
-class FirebaseService {
+class FirebaseService with ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
   Map<String, dynamic> _originalCardsState = <String, dynamic>{};
@@ -35,6 +36,15 @@ class FirebaseService {
                 'mapUrl': doc.data()['mapUrl'] ?? '',
               })
           .toList();
+    });
+  }
+
+  Stream<List<Map<String, dynamic>>> getFoldersStream() {
+    return _firestore.collection('folder').snapshots().map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        return {'id': doc.id, 'name': data['name'] ?? ''};
+      }).toList();
     });
   }
 
@@ -150,6 +160,7 @@ class FirebaseService {
       });
       final deckId = newDeckRef.id;
       await _createTagPath(tags, deckId, title, exactMatch, isPublic);
+      notifyListeners();
       return deckId;
     } catch (e) {
       print("Error creating deck: $e");
@@ -204,10 +215,44 @@ class FirebaseService {
     });
   }
 
+  Future<void> duplicateCategory(String parentPath, String folderId) async {
+    try {
+      // Reference to the folder document
+      final folderDocRef = _firestore.collection(parentPath).doc(folderId);
+
+      // Check if the folder has any subcollections
+      final subcollections = await folderDocRef.collection('subfolders').get();
+      for (var subfolder in subcollections.docs) {
+        await duplicateCategory(
+            '$parentPath/$folderId/subfolders', subfolder.id);
+      }
+      //Get data for parentPath & folderId
+      final folderSnapshot = await folderDocRef.get();
+      final folderData = folderSnapshot.data();
+      //Extract all neccessary data to deck
+      final deckData = {
+        'deckId': folderData?['deckId'] ?? '',
+        'title': folderData?['title'] ?? '',
+        'tags': List.from(folderData?['tags'] ?? []),
+        'exactMatch': folderData?['exactMatch'] ?? true,
+        'isPublic': folderData?['isPublic'] ?? false,
+        'parentPath': parentPath,
+      };
+      //Duplicate deck
+      await duplicateDeck(deckData);
+      notifyListeners();
+    } catch (e) {
+      print("Error duplicating category: $e");
+    }
+  }
+
   Future<String> duplicateDeck(Map<String, dynamic> deck) async {
     try {
       Map<String, dynamic> newDeck = Map.from(deck);
+      List<String> tags = recreateTagsFromPath(deck['parentPath']);
+
       newDeck['title'] = newDeck['title'] + ' (Copy)';
+      newDeck['tags'] = tags;
       var newDeckRef = _firestore.collection('decks').doc();
 
       newDeck = await duplicateImageInData(
@@ -217,7 +262,7 @@ class FirebaseService {
 
       var cardsSnapshot = await _firestore
           .collection('decks')
-          .doc(deck['id'])
+          .doc(deck['deckId'])
           .collection('cards')
           .get();
 
@@ -232,12 +277,29 @@ class FirebaseService {
             .collection('cards')
             .add(card);
       }
-
+      _createTagPath(tags, newDeckRef.id, newDeck['title'] ?? '',
+          newDeck['exactMatch'] ?? false, newDeck['isPublic'] ?? false);
+      notifyListeners();
       return newDeckRef.id;
     } catch (e) {
       print("Error duplicating deck: $e");
       return '';
     }
+  }
+
+  List<String> recreateTagsFromPath(String path) {
+    // Split the path by the '/' delimiter
+    List<String> segments = path.split('/');
+
+    // Filter out the "folder" and "subfolders" segments
+    List<String> tags = [];
+    for (int i = 0; i < segments.length; i++) {
+      if (segments[i] != 'folder' && segments[i] != 'subfolders') {
+        tags.add(segments[i]);
+      }
+    }
+
+    return tags;
   }
 
   Future<Map<String, dynamic>> duplicateImageInData(Map<String, dynamic> data,
@@ -272,8 +334,15 @@ class FirebaseService {
     return newImageUrl;
   }
 
-  Map<String, dynamic> constructDeckUpdates(String title, String videoUrl,
-      String mapUrl, bool exactMatch, List<String> tags, bool isPublic) {
+  Map<String, dynamic> constructDeckUpdates(
+      Map<String, dynamic> deck,
+      String deckId,
+      String title,
+      String videoUrl,
+      String mapUrl,
+      bool exactMatch,
+      List<String> tags,
+      bool isPublic) {
     Map<String, dynamic> updates = {};
     if (_originalCardsState['title'] != title) {
       updates['title'] = title;
@@ -286,6 +355,8 @@ class FirebaseService {
     }
     if (_originalCardsState['tags'] != tags) {
       updates['tags'] = tags;
+      _createTagPath(tags, deckId, title, exactMatch, isPublic);
+      deleteFolderIfEmpty(deck['parentPath'], deck['folderId']);
     }
     if (_originalCardsState['exactMatch'] != exactMatch) {
       updates['exactMatch'] = exactMatch;
@@ -297,6 +368,7 @@ class FirebaseService {
   }
 
   Future<void> updateDeck(
+      Map<String, dynamic> deck,
       String deckId,
       String title,
       String videoUrl,
@@ -310,8 +382,8 @@ class FirebaseService {
 
     // Construct the updates map
     Map<String, dynamic> deckUpdates = constructDeckUpdates(
-        title, videoUrl, mapUrl, exactMatch, tags, isPublic);
-    ;
+        deck, deckId, title, videoUrl, mapUrl, exactMatch, tags, isPublic);
+
     if (deckUpdates.isNotEmpty) {
       batch.update(deckRef, deckUpdates);
     }
@@ -433,6 +505,7 @@ class FirebaseService {
     }
     await _firestore.collection('decks').doc(deckId).delete();
     await deleteFolderIfEmpty(parentPath, folderId);
+    notifyListeners();
   }
 
   Future<void> deleteFolderIfEmpty(String parentPath, String folderId) async {

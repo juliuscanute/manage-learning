@@ -16,10 +16,10 @@ import 'package:path/path.dart';
 import 'package:provider/provider.dart';
 
 class CardsPageView extends StatelessWidget {
-  final String? deckId;
+  final Map<String, dynamic> deck;
   final DeckOperation operation;
 
-  const CardsPageView({required this.deckId, required this.operation, Key? key})
+  const CardsPageView({required this.deck, required this.operation, Key? key})
       : super(key: key);
 
   @override
@@ -27,10 +27,10 @@ class CardsPageView extends StatelessWidget {
     return BlocProvider(
       create: (context) => DeckBloc(
           Provider.of<FirebaseService>(context, listen: false),
-          deckId,
+          deck['deckId'],
           operation)
         ..add(LoadDeckData(
-          deckId,
+          deck['deckId'],
         )),
       child: Scaffold(
         appBar: AppBar(
@@ -485,7 +485,7 @@ class CardsPageView extends StatelessWidget {
               padding: const EdgeInsets.only(left: 8.0),
               child: ElevatedButton(
                 onPressed: () {
-                  context.read<DeckBloc>().add(SaveDeckAndCards());
+                  context.read<DeckBloc>().add(SaveDeckAndCards(deck));
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,

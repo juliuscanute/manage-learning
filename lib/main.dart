@@ -61,7 +61,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        Provider<FirebaseService>(
+        ChangeNotifierProvider<FirebaseService>(
           create: (_) => FirebaseService(),
         )
       ],
@@ -88,12 +88,12 @@ class MyApp extends StatelessWidget {
                   return const DecksPage();
                 } else if (settings.name == '/addcards') {
                   return const CardsPageView(
-                    deckId: null,
+                    deck: {},
                     operation: DeckOperation.create,
                   );
                 } else if (settings.name == '/editcards') {
                   return CardsPageView(
-                    deckId: settings.arguments as String,
+                    deck: settings.arguments as Map<String, dynamic>,
                     operation: DeckOperation.edit,
                   );
                 } else if (settings.name == '/category-screen-new') {
@@ -114,7 +114,7 @@ class MyApp extends StatelessWidget {
                       categoryList: categoryList, decks: decks);
                 } else if (settings.name == '/smart-deck') {
                   return const CardsPageView(
-                      deckId: null, operation: DeckOperation.load);
+                      deck: {}, operation: DeckOperation.load);
                 } else if (settings.name == '/blog-updates') {
                   final data = settings.arguments as BlogData;
                   return BlogCreateEdit(blogData: data);

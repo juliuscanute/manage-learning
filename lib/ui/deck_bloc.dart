@@ -156,7 +156,7 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
   Future<void> _onSaveDeckAndCards(
       SaveDeckAndCards event, Emitter<DeckState> emit) async {
     if (operation == DeckOperation.edit) {
-      await _updateDeck(event, emit);
+      await _updateDeck(event, emit, event.deck);
     } else {
       await _createDeck(event, emit);
     }
@@ -216,8 +216,8 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
     }
   }
 
-  Future<void> _updateDeck(
-      SaveDeckAndCards event, Emitter<DeckState> emit) async {
+  Future<void> _updateDeck(SaveDeckAndCards event, Emitter<DeckState> emit,
+      Map<String, dynamic> deck) async {
     try {
       emit(state.copyWith(isLoading: true));
 
@@ -232,6 +232,7 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
       }
 
       await _firebaseService.updateDeck(
+        deck,
         deckId!,
         state.deckTitleController.text,
         state.videoUrlController.text,

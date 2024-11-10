@@ -61,15 +61,18 @@ class _CategoryCardNewState extends State<CategoryCardNew> {
     );
   }
 
-  void _duplicateDeck() {
-    final newCategoryList =
-        List<String>.from(widget.subFolders.map((folder) => folder['name']));
-    final lastIndex = newCategoryList.length - 1;
-    for (var item in widget.subFolders) {
-      List<String> tags = item['tags'].cast<String>();
-      tags[lastIndex] = '${tags[lastIndex]} (Copy)';
-      item['tags'] = tags;
-      _firebaseService.duplicateDeck(item);
+  void _duplicateDeck() async {
+    // Split the parentPath into segments
+    List<String> segments = widget.parentPath.split('/');
+
+    // Remove the last two segments to move one level up
+    if (segments.length > 1) {
+      segments.removeLast(); // Remove the "subfolders" keyword
     }
+
+    // Join the remaining segments to form the new path
+    final nextPath = segments.join('/');
+
+    await _firebaseService.duplicateCategory(nextPath, widget.folderId);
   }
 }

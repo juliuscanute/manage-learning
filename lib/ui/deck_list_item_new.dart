@@ -27,8 +27,7 @@ class _DeckListItemNewState extends State<DeckListItemNew> {
       IconButton(
         icon: const Icon(Icons.edit),
         onPressed: () {
-          Navigator.of(context)
-              .pushNamed('/editcards', arguments: widget.deck['deckId']);
+          Navigator.of(context).pushNamed('/editcards', arguments: widget.deck);
         },
       ),
       IconButton(
