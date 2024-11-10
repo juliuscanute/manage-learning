@@ -22,64 +22,72 @@ class _CategoryScreenNewState extends State<CategoryScreenNew> {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<List<Map<String, dynamic>>>(
-      stream: _firebaseService.getFoldersStream(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Categories'),
+      ),
+      body: StreamBuilder<List<Map<String, dynamic>>>(
+        stream: _firebaseService.getFoldersStream(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-        if (!snapshot.hasData || snapshot.data == null) {
-          return const Center(child: Text('No folders found'));
-        }
+          if (!snapshot.hasData || snapshot.data == null) {
+            return const Center(child: Text('No folders found'));
+          }
 
-        final folders = snapshot.data ?? [];
+          final folders = snapshot.data ?? [];
 
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            // Calculate the number of columns based on screen width
-            int crossAxisCount = constraints.maxWidth > 600
-                ? 4
-                : 1; // Example breakpoint at 600px
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              // Calculate the number of columns based on screen width
+              int crossAxisCount = constraints.maxWidth > 600
+                  ? 4
+                  : 1; // Example breakpoint at 600px
 
-            // Calculate the width of each child based on the number of columns
-            double width = (constraints.maxWidth - (crossAxisCount - 1) * 10) /
-                crossAxisCount;
+              // Calculate the width of each child based on the number of columns
+              double width =
+                  (constraints.maxWidth - (crossAxisCount - 1) * 10) /
+                      crossAxisCount;
 
-            return Wrap(
-              spacing: 10, // Horizontal space between items
-              runSpacing: 10, // Vertical space between items
-              children: List.generate(folders.length, (index) {
-                final folder = folders[index];
-                if (folder['type'] != 'card') {
-                  return SizedBox(
-                    width: width,
-                    child: CategoryCardNew(
-                      category: folder['id'],
-                      parentPath: 'folder/${folder['id']}',
-                      subFolders: folder['subFolders'] ?? [],
-                      folderId: folder['id'],
-                    ),
-                  );
-                } else {
-                  final leafNode = {
-                    'title': folder['title'] ?? 'Untitled',
-                    'deckId': folder['deckId'],
-                    'videoUrl': folder['videoUrl'],
-                    'mapUrl': folder['mapUrl'],
-                    'type': 'card',
-                    'isPublic': folder['isPublic'] ?? false,
-                  };
-                  return SizedBox(
-                    width: width,
-                    child: DeckListItemNew(deck: leafNode),
-                  );
-                }
-              }),
-            );
-          },
-        );
-      },
+              return SingleChildScrollView(
+                child: Wrap(
+                  spacing: 10, // Horizontal space between items
+                  runSpacing: 10, // Vertical space between items
+                  children: List.generate(folders.length, (index) {
+                    final folder = folders[index];
+                    if (folder['type'] != 'card') {
+                      return SizedBox(
+                        width: width,
+                        child: CategoryCardNew(
+                          category: folder['id'],
+                          parentPath: 'folder/${folder['id']}',
+                          subFolders: folder['subFolders'] ?? [],
+                          folderId: folder['id'],
+                        ),
+                      );
+                    } else {
+                      final leafNode = {
+                        'title': folder['title'] ?? 'Untitled',
+                        'deckId': folder['deckId'],
+                        'videoUrl': folder['videoUrl'],
+                        'mapUrl': folder['mapUrl'],
+                        'type': 'card',
+                        'isPublic': folder['isPublic'] ?? false,
+                      };
+                      return SizedBox(
+                        width: width,
+                        child: DeckListItemNew(deck: leafNode),
+                      );
+                    }
+                  }),
+                ),
+              );
+            },
+          );
+        },
+      ),
     );
   }
 }

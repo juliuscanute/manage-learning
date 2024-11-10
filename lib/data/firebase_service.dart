@@ -346,23 +346,30 @@ class FirebaseService with ChangeNotifier {
     Map<String, dynamic> updates = {};
     if (_originalCardsState['title'] != title) {
       updates['title'] = title;
+      updateFolderTitle(deck['parentPath'], deck['folderId'], title);
+      // Update deck title
     }
     if (_originalCardsState['videoUrl'] != videoUrl) {
       updates['videoUrl'] = videoUrl;
+      updateFolderVideoUrl(deck['parentPath'], deck['folderId'], videoUrl);
     }
     if (_originalCardsState['mapUrl'] != mapUrl) {
       updates['mapUrl'] = mapUrl;
+      updateFolderMapUrl(deck['parentPath'], deck['folderId'], mapUrl);
     }
     if (_originalCardsState['tags'] != tags) {
       updates['tags'] = tags;
       _createTagPath(tags, deckId, title, exactMatch, isPublic);
       deleteFolderIfEmpty(deck['parentPath'], deck['folderId']);
+      updateFolderTags(deck['parentPath'], deck['folderId'], tags);
     }
     if (_originalCardsState['exactMatch'] != exactMatch) {
       updates['exactMatch'] = exactMatch;
+      updateFolderExactMatch(deck['parentPath'], deck['folderId'], exactMatch);
     }
     if (_originalCardsState['isPublic'] != isPublic) {
       updates['isPublic'] = isPublic;
+      updateFolderIsPublic(deck['parentPath'], deck['folderId'], isPublic);
     }
     return updates;
   }
@@ -506,6 +513,72 @@ class FirebaseService with ChangeNotifier {
     await _firestore.collection('decks').doc(deckId).delete();
     await deleteFolderIfEmpty(parentPath, folderId);
     notifyListeners();
+  }
+
+  Future<void> updateFolderTitle(
+      String parentPath, String folderId, String title) async {
+    try {
+      await _firestore.collection(parentPath).doc(folderId).update({
+        'title': title,
+      });
+    } catch (e) {
+      print("Error updating folder title: $e");
+    }
+  }
+
+  Future<void> updateFolderVideoUrl(
+      String parentPath, String folderId, String videoUrl) async {
+    try {
+      await _firestore.collection(parentPath).doc(folderId).update({
+        'videoUrl': videoUrl,
+      });
+    } catch (e) {
+      print("Error updating folder video URL: $e");
+    }
+  }
+
+  Future<void> updateFolderMapUrl(
+      String parentPath, String folderId, String mapUrl) async {
+    try {
+      await _firestore.collection(parentPath).doc(folderId).update({
+        'mapUrl': mapUrl,
+      });
+    } catch (e) {
+      print("Error updating folder map URL: $e");
+    }
+  }
+
+  Future<void> updateFolderTags(
+      String parentPath, String folderId, List<String> tags) async {
+    try {
+      await _firestore.collection(parentPath).doc(folderId).update({
+        'tags': tags,
+      });
+    } catch (e) {
+      print("Error updating folder tags: $e");
+    }
+  }
+
+  Future<void> updateFolderExactMatch(
+      String parentPath, String folderId, bool exactMatch) async {
+    try {
+      await _firestore.collection(parentPath).doc(folderId).update({
+        'exactMatch': exactMatch,
+      });
+    } catch (e) {
+      print("Error updating folder exact match: $e");
+    }
+  }
+
+  Future<void> updateFolderIsPublic(
+      String parentPath, String folderId, bool isPublic) async {
+    try {
+      await _firestore.collection(parentPath).doc(folderId).update({
+        'isPublic': isPublic,
+      });
+    } catch (e) {
+      print("Error updating folder is public: $e");
+    }
   }
 
   Future<void> deleteFolderIfEmpty(String parentPath, String folderId) async {
