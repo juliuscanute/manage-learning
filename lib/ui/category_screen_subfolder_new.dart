@@ -44,21 +44,8 @@ class _SubfolderScreenState extends State<SubfolderScreen> {
       ),
       body: Consumer<FirebaseService>(
         builder: (context, firebaseService, child) {
-          return FutureBuilder<void>(
-            future: _refreshSubFolders(firebaseService),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-
-              if (snapshot.hasError) {
-                return const Center(child: Text('Error loading subfolders'));
-              }
-
-              return buildSubfolderLayout(
-                  context, _subFolders, widget.parentPath);
-            },
-          );
+          _refreshSubFolders(firebaseService); // Refresh subfolders on change
+          return buildSubfolderLayout(context, _subFolders, widget.parentPath);
         },
       ),
     );
@@ -80,7 +67,7 @@ class _SubfolderScreenState extends State<SubfolderScreen> {
           child: Wrap(
             spacing: 10, // Horizontal space between items
             runSpacing: 10, // Vertical space between items
-            children: List.generate(subFolders.length, (index) {
+            children: List.generate(_subFolders.length, (index) {
               final folder = subFolders[index];
               if (folder['type'] != 'card') {
                 return SizedBox(
