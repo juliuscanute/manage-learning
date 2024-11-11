@@ -20,20 +20,18 @@ class SubfolderScreen extends StatefulWidget {
 }
 
 class _SubfolderScreenState extends State<SubfolderScreen> {
-  late List<Map<String, dynamic>> _subFolders;
+  late Future<List<Map<String, dynamic>>> _subFoldersFuture;
 
   @override
   void initState() {
     super.initState();
-    _subFolders = widget.subFolders;
+    _subFoldersFuture = _fetchSubFolders();
   }
 
-  Future<void> _refreshSubFolders(FirebaseService firebaseService) async {
-    final updatedSubFolders =
-        await firebaseService.getSubFolders(widget.parentPath);
-    setState(() {
-      _subFolders = updatedSubFolders;
-    });
+  Future<List<Map<String, dynamic>>> _fetchSubFolders() async {
+    final firebaseService =
+        Provider.of<FirebaseService>(context, listen: false);
+    return await firebaseService.getSubFolders(widget.parentPath);
   }
 
   @override
@@ -41,11 +39,35 @@ class _SubfolderScreenState extends State<SubfolderScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.parentFolderName),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              setState(() {
+                _subFoldersFuture = _fetchSubFolders();
+              });
+            },
+          ),
+        ],
       ),
-      body: Consumer<FirebaseService>(
-        builder: (context, firebaseService, child) {
-          _refreshSubFolders(firebaseService); // Refresh subfolders on change
-          return buildSubfolderLayout(context, _subFolders, widget.parentPath);
+      body: FutureBuilder<List<Map<String, dynamic>>>(
+        future: _subFoldersFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (snapshot.hasError) {
+            return const Center(child: Text('Error loading subfolders'));
+          }
+
+          if (!snapshot.hasData || snapshot.data == null) {
+            return const Center(child: Text('No subfolders found'));
+          }
+
+          final subFolders = snapshot.data ?? [];
+
+          return buildSubfolderLayout(context, subFolders, widget.parentPath);
         },
       ),
     );
@@ -67,7 +89,7 @@ class _SubfolderScreenState extends State<SubfolderScreen> {
           child: Wrap(
             spacing: 10, // Horizontal space between items
             runSpacing: 10, // Vertical space between items
-            children: List.generate(_subFolders.length, (index) {
+            children: List.generate(subFolders.length, (index) {
               final folder = subFolders[index];
               if (folder['type'] != 'card') {
                 return SizedBox(
