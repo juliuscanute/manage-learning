@@ -105,46 +105,29 @@ class FirebaseService with ChangeNotifier {
   }
 
   Future<Map<String, dynamic>> getDeckData(String deckId) async {
-    var deckData = <String, dynamic>{};
+    try {
+      var deckRef = _firestore.collection('decks').doc(deckId);
+      var deckSnapshot = await deckRef.get();
+      if (!deckSnapshot.exists) {
+        throw Exception("Deck not found");
+      }
+      var deckData = deckSnapshot.data()!;
+      deckData['id'] = deckSnapshot.id;
 
-    var deckRef = _firestore.collection('decks').doc(deckId);
-    var deckSnapshot = await deckRef.get();
-    if (!deckSnapshot.exists) {
-      throw Exception("Deck not found");
+      // Fetch the cards ordered by 'position'
+      var cardsSnapshot =
+          await deckRef.collection('cards').orderBy('position').get();
+      var cards = cardsSnapshot.docs.map((doc) {
+        var data = doc.data();
+        data['id'] = doc.id;
+        return data;
+      }).toList();
+      deckData['cards'] = cards;
+      _originalCardsState = deckData;
+      return deckData;
+    } catch (error) {
+      throw Exception("Error fetching deck data: $error");
     }
-    deckData['title'] = deckSnapshot.data()?['title'] ?? '';
-    deckData['videoUrl'] = deckSnapshot.data()?['videoUrl'] ?? '';
-    deckData['tags'] =
-        List.from(deckSnapshot.data()?['tags'] ?? []); // Add tags here
-    deckData['mapUrl'] = deckSnapshot.data()?['mapUrl'] ?? '';
-    deckData['exactMatch'] = deckSnapshot.data()?['exactMatch'] ?? true;
-    deckData['isPublic'] =
-        deckSnapshot.data()?['isPublic'] ?? false; // Add isPublic here
-
-    // Fetch the cards ordered by 'position'
-    var cardsSnapshot =
-        await deckRef.collection('cards').orderBy('position').get();
-    var cards = cardsSnapshot.docs
-        .asMap() // Convert to map to access index
-        .map((index, doc) => MapEntry(index, {
-              'id': doc.id,
-              'front': doc.data()['front'] ?? '',
-              'front_tex': doc.data()['front_tex'] ?? '',
-              'back': doc.data()['back'] ?? '',
-              'back_tex': doc.data()['back_tex'] ?? '',
-              'imageUrl': doc.data()['imageUrl'] ?? '',
-              'position':
-                  doc.data()['position'] ?? index, // Use map index as fallback
-              'mcq': doc.data()['mcq'] ?? {},
-              'explanation': doc.data()['explanation'] ?? '',
-              'explanation_tex': doc.data()['explanation_tex'] ?? '',
-              'mnemonic': doc.data()['mnemonic'] ?? '',
-            }))
-        .values // Convert back to iterable
-        .toList();
-    deckData['cards'] = cards;
-    _originalCardsState = deckData;
-    return deckData;
   }
 
   Future<String> createDeck(
