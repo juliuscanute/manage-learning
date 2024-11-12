@@ -23,20 +23,8 @@ class FirebaseService with ChangeNotifier {
   final FirebaseStorage _storage = FirebaseStorage.instance;
   Map<String, dynamic> _originalCardsState = <String, dynamic>{};
 
-  Stream<List<Map<String, dynamic>>> getDecksStream() {
-    return _firestore.collection('decks').snapshots().map((snapshot) {
-      return snapshot.docs
-          .map((doc) => {
-                'id': doc.id,
-                'title': doc.data()['title'] ?? '',
-                'videoUrl': doc.data()['videoUrl'] ?? '',
-                'exactMatch': doc.data()['exactMatch'] ?? true,
-                'tags':
-                    List.from(doc.data()['tags'] ?? []), // Include tags here
-                'mapUrl': doc.data()['mapUrl'] ?? '',
-              })
-          .toList();
-    });
+  FirebaseService() {
+    _firestore.settings = const Settings(persistenceEnabled: true);
   }
 
   Stream<List<Map<String, dynamic>>> getFoldersStream() {
@@ -46,25 +34,6 @@ class FirebaseService with ChangeNotifier {
         return {'id': doc.id, 'name': data['name'] ?? ''};
       }).toList();
     });
-  }
-
-  // Method to read all top level folders from the Firestore
-  // Path: /folder/
-  Future<List<Map<String, dynamic>>> getFolders() async {
-    try {
-      var folders = <Map<String, dynamic>>[];
-      var folderSnapshot = await _firestore.collection('folder').get();
-      for (var folder in folderSnapshot.docs) {
-        folders.add({
-          'id': folder.id,
-          'name': folder.data()['name'] ?? '',
-        });
-      }
-      return folders;
-    } catch (error) {
-      print('Error reading folders from Firestore: $error');
-      return [];
-    }
   }
 
 // Method to read subfolders of a folder from Firestore

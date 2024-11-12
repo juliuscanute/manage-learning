@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
@@ -7,6 +5,10 @@ import 'package:image_picker/image_picker.dart';
 class BlogRepository {
   final FirebaseStorage _storage = FirebaseStorage.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  BlogRepository() {
+    _firestore.settings = const Settings(persistenceEnabled: true);
+  }
 
   Future<String> uploadImage(XFile imageFile) async {
     final String fileName =
