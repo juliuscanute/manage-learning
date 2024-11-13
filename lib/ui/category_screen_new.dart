@@ -23,9 +23,6 @@ class _CategoryScreenNewState extends State<CategoryScreenNew> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Categories'),
-      ),
       body: StreamBuilder<List<Map<String, dynamic>>>(
         stream: _firebaseService.getFoldersStream(),
         builder: (context, snapshot) {

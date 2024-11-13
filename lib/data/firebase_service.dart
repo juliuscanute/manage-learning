@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
@@ -18,13 +20,22 @@ class Deck {
   });
 }
 
-class FirebaseService with ChangeNotifier {
+class FirebaseService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
   Map<String, dynamic> _originalCardsState = <String, dynamic>{};
 
+  final StreamController<void> _changeController =
+      StreamController<void>.broadcast();
+
+  Stream<void> get changeStream => _changeController.stream;
+
   FirebaseService() {
     _firestore.settings = const Settings(persistenceEnabled: true);
+  }
+
+  void notifyListeners() {
+    _changeController.add(null);
   }
 
   Stream<List<Map<String, dynamic>>> getFoldersStream() {

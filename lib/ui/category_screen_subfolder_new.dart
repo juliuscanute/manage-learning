@@ -25,12 +25,19 @@ class _SubfolderScreenState extends State<SubfolderScreen> {
   @override
   void initState() {
     super.initState();
-    _subFoldersFuture = _fetchSubFolders();
-  }
-
-  Future<List<Map<String, dynamic>>> _fetchSubFolders() async {
     final firebaseService =
         Provider.of<FirebaseService>(context, listen: false);
+    _subFoldersFuture = _fetchSubFolders(firebaseService);
+
+    firebaseService.changeStream.listen((event) {
+      setState(() {
+        _subFoldersFuture = _fetchSubFolders(firebaseService);
+      });
+    });
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchSubFolders(
+      FirebaseService firebaseService) async {
     return await firebaseService.getSubFolders(widget.parentPath);
   }
 
@@ -39,16 +46,6 @@ class _SubfolderScreenState extends State<SubfolderScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.parentFolderName),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              setState(() {
-                _subFoldersFuture = _fetchSubFolders();
-              });
-            },
-          ),
-        ],
       ),
       body: FutureBuilder<List<Map<String, dynamic>>>(
         future: _subFoldersFuture,
