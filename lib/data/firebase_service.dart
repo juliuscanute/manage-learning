@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
 
@@ -23,6 +23,8 @@ class Deck {
 class FirebaseService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
+  final FirebaseAnalytics _analytics = FirebaseAnalytics.instance;
+
   Map<String, dynamic> _originalCardsState = <String, dynamic>{};
 
   final StreamController<void> _changeController =
@@ -38,12 +40,24 @@ class FirebaseService {
     _changeController.add(null);
   }
 
+  Future<void> logAnalyticsEvent(
+      String eventName, Map<String, dynamic> parameters) async {
+    await _analytics.logEvent(
+      name: eventName,
+      parameters: parameters,
+    );
+  }
+
   Stream<List<Map<String, dynamic>>> getFoldersStream() {
     return _firestore.collection('folder').snapshots().map((snapshot) {
-      return snapshot.docs.map((doc) {
+      final items = snapshot.docs.map((doc) {
         final data = doc.data();
         return {'id': doc.id, 'name': data['name'] ?? ''};
       }).toList();
+      items.sort((a, b) => a['name'].compareTo(b['name']));
+      logAnalyticsEvent(
+          "read_operation", {"collection": "folder", "size": items.length});
+      return items;
     });
   }
 
@@ -77,6 +91,12 @@ class FirebaseService {
         }
       }
 
+      logAnalyticsEvent("read_operation", {
+        "collection": "folder",
+        "parentPath": parentPath,
+        "size": subFolders.length
+      });
+      subFolders.sort((a, b) => a['name'].compareTo(b['name']));
       return subFolders;
     } catch (error) {
       print('Error reading subfolders from Firestore: $error');
@@ -104,6 +124,8 @@ class FirebaseService {
       }).toList();
       deckData['cards'] = cards;
       _originalCardsState = deckData;
+      logAnalyticsEvent("read_operation",
+          {"collection": "decks", "deckId": deckId, "size": cards.length});
       return deckData;
     } catch (error) {
       throw Exception("Error fetching deck data: $error");
@@ -124,6 +146,14 @@ class FirebaseService {
       final deckId = newDeckRef.id;
       await _createTagPath(tags, deckId, title, exactMatch, isPublic);
       notifyListeners();
+      logAnalyticsEvent("write_operation", {
+        "collection": "decks",
+        "deckId": deckId,
+        "title": title,
+        "tags": tags,
+        "exactMatch": exactMatch,
+        "isPublic": isPublic,
+      });
       return deckId;
     } catch (e) {
       print("Error creating deck: $e");
@@ -176,6 +206,15 @@ class FirebaseService {
       'type': 'card',
       'hasSubfolders': false,
     });
+
+    logAnalyticsEvent("write_operation", {
+      "collection": "folder",
+      "deckId": deckId,
+      "title": title,
+      "tags": tags,
+      "exactMatch": exactMatch,
+      "isPublic": isPublic,
+    });
   }
 
   Future<void> duplicateCategory(String parentPath, String folderId) async {
@@ -203,6 +242,11 @@ class FirebaseService {
       };
       //Duplicate deck
       await duplicateDeck(deckData);
+      logAnalyticsEvent("write_operation", {
+        "collection": "folder",
+        "parentPath": parentPath,
+        "folderId": folderId,
+      });
       notifyListeners();
     } catch (e) {
       print("Error duplicating category: $e");
@@ -242,6 +286,14 @@ class FirebaseService {
       }
       _createTagPath(tags, newDeckRef.id, newDeck['title'] ?? '',
           newDeck['exactMatch'] ?? false, newDeck['isPublic'] ?? false);
+      logAnalyticsEvent("write_operation", {
+        "collection": "decks",
+        "deckId": newDeckRef.id,
+        "title": newDeck['title'],
+        "tags": tags,
+        "exactMatch": newDeck['exactMatch'],
+        "isPublic": newDeck['isPublic'],
+      });
       notifyListeners();
       return newDeckRef.id;
     } catch (e) {
@@ -427,6 +479,15 @@ class FirebaseService {
       batch.delete(cardRef);
     }
 
+    logAnalyticsEvent("write_operation", {
+      "collection": "decks",
+      "deckId": deckId,
+      "title": title,
+      "tags": tags,
+      "exactMatch": exactMatch,
+      "isPublic": isPublic,
+      "size": cards.length,
+    });
     // Commit the batch operation
     await batch.commit();
   }
@@ -460,6 +521,11 @@ class FirebaseService {
         .collection('cards')
         .doc(cardId)
         .delete();
+    logAnalyticsEvent("delete_operation", {
+      "collection": "decks",
+      "deckId": deckId,
+      "cardId": cardId,
+    });
   }
 
   Future<void> deleteDeck(
@@ -475,6 +541,10 @@ class FirebaseService {
     }
     await _firestore.collection('decks').doc(deckId).delete();
     await deleteFolderIfEmpty(parentPath, folderId);
+    logAnalyticsEvent("delete_operation", {
+      "collection": "decks",
+      "deckId": deckId,
+    });
     notifyListeners();
   }
 
