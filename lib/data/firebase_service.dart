@@ -56,7 +56,7 @@ class FirebaseService {
       }).toList();
       items.sort((a, b) => a['name'].compareTo(b['name']));
       logAnalyticsEvent(
-          "read_operation", {"collection": "folder", "size": items.length});
+          "getFoldersStream", {"collection": "folder", "size": items.length});
       return items;
     });
   }
@@ -91,7 +91,7 @@ class FirebaseService {
         }
       }
 
-      logAnalyticsEvent("read_operation", {
+      logAnalyticsEvent("getSubFolders", {
         "collection": "folder",
         "parentPath": parentPath,
         "size": subFolders.length
@@ -124,7 +124,7 @@ class FirebaseService {
       }).toList();
       deckData['cards'] = cards;
       _originalCardsState = deckData;
-      logAnalyticsEvent("read_operation",
+      logAnalyticsEvent("getDeckData",
           {"collection": "decks", "deckId": deckId, "size": cards.length});
       return deckData;
     } catch (error) {
@@ -146,7 +146,7 @@ class FirebaseService {
       final deckId = newDeckRef.id;
       await _createTagPath(tags, deckId, title, exactMatch, isPublic);
       notifyListeners();
-      logAnalyticsEvent("write_operation", {
+      logAnalyticsEvent("createDeck", {
         "collection": "decks",
         "deckId": deckId,
         "title": title,
@@ -207,7 +207,7 @@ class FirebaseService {
       'hasSubfolders': false,
     });
 
-    logAnalyticsEvent("write_operation", {
+    logAnalyticsEvent("_createTagPath", {
       "collection": "folder",
       "deckId": deckId,
       "title": title,
@@ -242,7 +242,7 @@ class FirebaseService {
       };
       //Duplicate deck
       await duplicateDeck(deckData);
-      logAnalyticsEvent("write_operation", {
+      logAnalyticsEvent("duplicateCategory", {
         "collection": "folder",
         "parentPath": parentPath,
         "folderId": folderId,
@@ -273,20 +273,22 @@ class FirebaseService {
           .collection('cards')
           .get();
 
+      WriteBatch batch = _firestore.batch();
+
       for (var cardDoc in cardsSnapshot.docs) {
         var card = cardDoc.data();
 
         card = await duplicateImageInData(
             card, 'imageUrl', newDeckRef, 'card_images');
-        await _firestore
-            .collection('decks')
-            .doc(newDeckRef.id)
-            .collection('cards')
-            .add(card);
+        var cardRef = newDeckRef.collection('cards').doc();
+        batch.set(cardRef, card);
       }
+
+      await batch.commit();
+
       _createTagPath(tags, newDeckRef.id, newDeck['title'] ?? '',
           newDeck['exactMatch'] ?? false, newDeck['isPublic'] ?? false);
-      logAnalyticsEvent("write_operation", {
+      logAnalyticsEvent("duplicateDeck", {
         "collection": "decks",
         "deckId": newDeckRef.id,
         "title": newDeck['title'],
@@ -479,7 +481,7 @@ class FirebaseService {
       batch.delete(cardRef);
     }
 
-    logAnalyticsEvent("write_operation", {
+    logAnalyticsEvent("updateDeck", {
       "collection": "decks",
       "deckId": deckId,
       "title": title,
