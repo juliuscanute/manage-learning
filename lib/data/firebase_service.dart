@@ -96,7 +96,20 @@ class FirebaseService {
         "parentPath": parentPath,
         "size": subFolders.length
       });
-      subFolders.sort((a, b) => a['name'].compareTo(b['name']));
+
+      // Ensure all names and titles are strings and handle null values
+      subFolders.sort((a, b) {
+        String nameA = (a['name'] ?? '').toString().toLowerCase();
+        String nameB = (b['name'] ?? '').toString().toLowerCase();
+        int nameComparison = nameA.compareTo(nameB);
+        if (nameComparison != 0) {
+          return nameComparison;
+        }
+        String titleA = (a['title'] ?? '').toString().toLowerCase();
+        String titleB = (b['title'] ?? '').toString().toLowerCase();
+        return titleA.compareTo(titleB);
+      });
+
       return subFolders;
     } catch (error) {
       print('Error reading subfolders from Firestore: $error');
