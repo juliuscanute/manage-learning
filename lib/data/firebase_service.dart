@@ -124,8 +124,8 @@ class FirebaseService {
       }).toList();
       deckData['cards'] = cards;
       _originalCardsState = deckData;
-      logAnalyticsEvent("getDeckData",
-          {"collection": "decks", "deckId": deckId, "size": cards.length});
+      logAnalyticsEvent(
+          "getDeckData", {"collection": "decks", "deckId": deckId});
       return deckData;
     } catch (error) {
       throw Exception("Error fetching deck data: $error");
@@ -211,9 +211,6 @@ class FirebaseService {
       "collection": "folder",
       "deckId": deckId,
       "title": title,
-      "tags": tags,
-      "exactMatch": exactMatch,
-      "isPublic": isPublic,
     });
   }
 
@@ -286,15 +283,12 @@ class FirebaseService {
 
       await batch.commit();
 
-      _createTagPath(tags, newDeckRef.id, newDeck['title'] ?? '',
+      await _createTagPath(tags, newDeckRef.id, newDeck['title'] ?? '',
           newDeck['exactMatch'] ?? false, newDeck['isPublic'] ?? false);
       logAnalyticsEvent("duplicateDeck", {
         "collection": "decks",
         "deckId": newDeckRef.id,
-        "title": newDeck['title'],
-        "tags": tags,
-        "exactMatch": newDeck['exactMatch'],
-        "isPublic": newDeck['isPublic'],
+        "title": newDeck['title'] ?? '',
       });
       notifyListeners();
       return newDeckRef.id;
@@ -351,7 +345,7 @@ class FirebaseService {
     return newImageUrl;
   }
 
-  Map<String, dynamic> constructDeckUpdates(
+  Future<Map<String, dynamic>> constructDeckUpdates(
       Map<String, dynamic> deck,
       String deckId,
       String title,
@@ -359,7 +353,7 @@ class FirebaseService {
       String mapUrl,
       bool exactMatch,
       List<String> tags,
-      bool isPublic) {
+      bool isPublic) async {
     Map<String, dynamic> updates = {};
     if (_originalCardsState['title'] != title) {
       updates['title'] = title;
@@ -376,7 +370,7 @@ class FirebaseService {
     }
     if (_originalCardsState['tags'] != tags) {
       updates['tags'] = tags;
-      _createTagPath(tags, deckId, title, exactMatch, isPublic);
+      await _createTagPath(tags, deckId, title, exactMatch, isPublic);
       deleteFolderIfEmpty(deck['parentPath'], deck['folderId']);
       updateFolderTags(deck['parentPath'], deck['folderId'], tags);
     }
@@ -405,7 +399,7 @@ class FirebaseService {
     DocumentReference deckRef = _firestore.collection('decks').doc(deckId);
 
     // Construct the updates map
-    Map<String, dynamic> deckUpdates = constructDeckUpdates(
+    Map<String, dynamic> deckUpdates = await constructDeckUpdates(
         deck, deckId, title, videoUrl, mapUrl, exactMatch, tags, isPublic);
 
     if (deckUpdates.isNotEmpty) {

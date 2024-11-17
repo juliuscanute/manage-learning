@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:manage_learning/data/firebase_service.dart';
+import 'package:manage_learning/ui/study_deck/app_bloc.dart';
+import 'package:manage_learning/ui/study_deck/app_event.dart';
 import 'package:provider/provider.dart';
 
 class CategoryCardNew extends StatefulWidget {
@@ -51,7 +53,7 @@ class _CategoryCardNewState extends State<CategoryCardNew> {
         trailing: IconButton(
           icon: const Icon(Icons.copy),
           onPressed: () {
-            _duplicateDeck();
+            _duplicateDeck(context);
           },
         ),
         onTap: () async {
@@ -61,18 +63,12 @@ class _CategoryCardNewState extends State<CategoryCardNew> {
     );
   }
 
-  void _duplicateDeck() async {
-    // Split the parentPath into segments
+  void _duplicateDeck(BuildContext context) {
     List<String> segments = widget.parentPath.split('/');
-
-    // Remove the last two segments to move one level up
     if (segments.length > 1) {
-      segments.removeLast(); // Remove the "subfolders" keyword
+      segments.removeLast();
     }
-
-    // Join the remaining segments to form the new path
     final nextPath = segments.join('/');
-
-    await _firebaseService.duplicateCategory(nextPath, widget.folderId);
+    context.read<AppBloc>().add(DuplicateCategory(nextPath, widget.folderId));
   }
 }

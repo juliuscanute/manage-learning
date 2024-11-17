@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:manage_learning/data/firebase_service.dart';
+import 'package:manage_learning/ui/study_deck/app_bloc.dart';
+import 'package:manage_learning/ui/study_deck/app_event.dart';
+import 'package:manage_learning/ui/study_deck/app_state.dart';
 import 'package:provider/provider.dart';
 import 'category_card_new.dart';
 import 'deck_list_item_new.dart';
-import 'package:manage_learning/data/firebase_service.dart';
 
 class SubfolderScreen extends StatefulWidget {
   final String parentPath;
@@ -20,72 +24,82 @@ class SubfolderScreen extends StatefulWidget {
 }
 
 class _SubfolderScreenState extends State<SubfolderScreen> {
-  late Future<List<Map<String, dynamic>>> _subFoldersFuture;
+  late List<Map<String, dynamic>> foldersToShow;
 
   @override
   void initState() {
     super.initState();
-    final firebaseService =
-        Provider.of<FirebaseService>(context, listen: false);
-    _subFoldersFuture = _fetchSubFolders(firebaseService);
-
-    firebaseService.changeStream.listen((event) {
-      setState(() {
-        _subFoldersFuture = _fetchSubFolders(firebaseService);
-      });
-    });
-  }
-
-  Future<List<Map<String, dynamic>>> _fetchSubFolders(
-      FirebaseService firebaseService) async {
-    return await firebaseService.getSubFolders(widget.parentPath);
+    foldersToShow = widget.subFolders;
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.parentFolderName),
-      ),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: _subFoldersFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (snapshot.hasError) {
-            return const Center(child: Text('Error loading subfolders'));
-          }
-
-          if (!snapshot.hasData || snapshot.data == null) {
-            return const Center(child: Text('No subfolders found'));
-          }
-
-          final subFolders = snapshot.data ?? [];
-
-          return buildSubfolderLayout(context, subFolders, widget.parentPath);
+    return BlocProvider(
+      create: (context) =>
+          AppBloc(Provider.of<FirebaseService>(context, listen: false)),
+      child: Builder(
+        builder: (context) {
+          return Scaffold(
+            appBar: AppBar(
+              title: Text(widget.parentFolderName),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.refresh),
+                  onPressed: () {
+                    context
+                        .read<AppBloc>()
+                        .add(RefreshCategories(widget.parentPath));
+                  },
+                ),
+              ],
+            ),
+            body: BlocListener<AppBloc, AppState>(
+              listener: (context, state) {
+                _handleAppState(context, state);
+              },
+              child: BlocBuilder<AppBloc, AppState>(
+                builder: (context, state) {
+                  if (state is CategoriesLoaded) {
+                    foldersToShow = state.categories;
+                  }
+                  return Stack(
+                    children: [
+                      buildSubfolderLayout(
+                          context, foldersToShow, widget.parentPath),
+                      if (state is AppLoading)
+                        const Center(child: CircularProgressIndicator()),
+                      if (state is AppError) Center(child: Text(state.message)),
+                    ],
+                  );
+                },
+              ),
+            ),
+          );
         },
       ),
     );
+  }
+
+  void _handleAppState(BuildContext context, AppState state) {
+    if (state is AppError) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(state.message)),
+      );
+    }
   }
 
   Widget buildSubfolderLayout(BuildContext context,
       List<Map<String, dynamic>> subFolders, String parentPath) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Calculate the number of columns based on screen width
-        int crossAxisCount =
-            constraints.maxWidth > 600 ? 4 : 1; // Example breakpoint at 600px
-
-        // Calculate the width of each child based on the number of columns
+        int crossAxisCount = constraints.maxWidth > 600 ? 4 : 1;
         double width =
             (constraints.maxWidth - (crossAxisCount - 1) * 10) / crossAxisCount;
 
         return SingleChildScrollView(
           child: Wrap(
-            spacing: 10, // Horizontal space between items
-            runSpacing: 10, // Vertical space between items
+            spacing: 10,
+            runSpacing: 10,
             children: List.generate(subFolders.length, (index) {
               final folder = subFolders[index];
               if (folder['type'] != 'card') {
