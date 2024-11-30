@@ -277,6 +277,7 @@ class FirebaseService {
       List<String> tags = recreateTagsFromPath(deck['parentPath']);
 
       newDeck['title'] = newDeck['title'] + ' (Copy)';
+      newDeck['normalizedTitle'] = newDeck['title'].toLowerCase();
       newDeck['tags'] = tags;
       var newDeckRef = _firestore.collection('decks').doc();
 
