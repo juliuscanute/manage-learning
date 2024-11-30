@@ -159,6 +159,7 @@ class FirebaseService {
 
       var newDeckRef = await _firestore.collection('decks').add({
         'title': title,
+        "normalizedTitle": title.toLowerCase(),
         'tags': tags,
         'exactMatch': exactMatch,
         'isPublic': isPublic, // Add isPublic here
@@ -377,6 +378,7 @@ class FirebaseService {
     Map<String, dynamic> updates = {};
     if (_originalCardsState['title'] != title) {
       updates['title'] = title;
+      updates['normalizedTitle'] = title.toLowerCase();
       updateFolderTitle(deck['parentPath'], deck['folderId'], title);
       // Update deck title
     }
