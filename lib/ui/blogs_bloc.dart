@@ -22,6 +22,20 @@ class BlogBloc extends Bloc<BlogEvent, BlogState> {
       : _repository = repository,
         _imageService = imageService,
         super(BlogInitial()) {
+    on<FetchBlogByIdEvent>((event, emit) async {
+      emit(BlogLoading());
+      try {
+        final blog = await _repository.getBlogPostById(event.blogId);
+        if (blog != null) {
+          emit(BlogFetched(blog));
+        } else {
+          emit(BlogError('Blog not found'));
+        }
+      } catch (e) {
+        emit(BlogError('Error fetching blog: $e'));
+      }
+    });
+
     on<UpdateMarkdownEvent>((event, emit) {
       emit(MarkdownUpdated(event.markdown));
     });
@@ -57,6 +71,7 @@ class BlogBloc extends Bloc<BlogEvent, BlogState> {
       try {
         String markdown = event.markdown;
         final title = event.title;
+        final tags = event.tags;
         final RegExp imageRegExp = RegExp(r'!\[.*?\]\((.*?)\)');
         final Iterable<RegExpMatch> matches = imageRegExp.allMatches(markdown);
         final List<String> imageUrls =
@@ -70,7 +85,9 @@ class BlogBloc extends Bloc<BlogEvent, BlogState> {
           }
         }
 
-        await _repository.saveBlogPost(title, markdown);
+        final blogId = await _repository.saveBlogPost(title, markdown, tags);
+        final tagList = tags.split('/').where((tag) => tag.isNotEmpty).toList();
+        await _repository.createTagPath(tagList, blogId, title);
         emit(BlogCreated());
       } catch (e) {
         emit(BlogError('Error saving blog post: $e'));
@@ -80,8 +97,9 @@ class BlogBloc extends Bloc<BlogEvent, BlogState> {
     on<UpdateBlogEvent>((event, emit) async {
       emit(BlogLoading());
       try {
-        String markdown = event.markdown;
-        final title = event.title;
+        String updatedMarkdown = event.markdown;
+        final upatedTitle = event.title;
+        final upatedTags = event.tags;
         final String initialMarkdown = event
             .initialMarkdown; // Assuming initial markdown is passed in the event
 
@@ -96,7 +114,7 @@ class BlogBloc extends Bloc<BlogEvent, BlogState> {
 
         // Extract image URLs from updated markdown
         final Iterable<RegExpMatch> updatedMatches =
-            imageRegExp.allMatches(markdown);
+            imageRegExp.allMatches(updatedMarkdown);
         final List<String> updatedImageUrls =
             updatedMatches.map((match) => match.group(1)!).toList();
 
@@ -116,12 +134,17 @@ class BlogBloc extends Bloc<BlogEvent, BlogState> {
               url.contains('manage-learning.web.app')) {
             final XFile imageFile = XFile(url);
             final String downloadUrl = await _repository.uploadImage(imageFile);
-            markdown = markdown.replaceAll(url, downloadUrl);
+            updatedMarkdown = updatedMarkdown.replaceAll(url, downloadUrl);
           }
         }
 
         // Update the blog post in Firestore
-        await _repository.updateBlogPost(event.blogId, title, markdown);
+        await _repository.updateBlogPost(
+          event.blogId,
+          upatedTitle,
+          updatedMarkdown,
+          upatedTags,
+        );
         emit(BlogUpdated());
       } catch (e) {
         emit(BlogError('Error updating blog post: $e'));

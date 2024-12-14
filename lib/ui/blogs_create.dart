@@ -16,27 +16,27 @@ class BlogCreateEdit extends StatefulWidget {
 
 class BlogData {
   final String? blogId;
-  final String? initialTitle;
-  final String? initialContent;
 
-  BlogData({this.blogId, this.initialTitle, this.initialContent});
+  BlogData({this.blogId});
 }
 
 class _BlogCreateEditState extends State<BlogCreateEdit> {
   final TextEditingController _markdownController = TextEditingController();
   final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _tagsController = TextEditingController();
   late BlogBloc _blogBloc;
+  String? initialMarkdown;
 
   @override
   void initState() {
     super.initState();
     _blogBloc =
         BlogBloc(repository: BlogRepository(), imageService: ImageService());
-    if (widget.blogData?.initialTitle != null) {
-      _titleController.text = widget.blogData!.initialTitle!;
-    }
-    if (widget.blogData?.initialContent != null) {
-      _markdownController.text = widget.blogData!.initialContent!;
+    final blogData = widget.blogData;
+    if (widget.blogData != null) {
+      if (blogData?.blogId != null) {
+        _blogBloc.add(FetchBlogByIdEvent(blogData!.blogId!));
+      }
     }
   }
 
@@ -58,31 +58,46 @@ class _BlogCreateEditState extends State<BlogCreateEdit> {
         ),
         body: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              _buildTitleField(),
-              const SizedBox(height: 16),
-              _buildAddImageButton(),
-              const SizedBox(height: 16),
-              BlocListener<BlogBloc, BlogState>(
-                listener: (context, state) {
-                  if (state is BlogImageUpdated) {
-                    _markdownController.text +=
-                        ' ![Illustration](${state.imageUrl})';
-                    _blogBloc
-                        .add(UpdateMarkdownEvent(_markdownController.text));
-                  } else if (state is BlogError) {
-                    _showErrorSnackbar(context, state.error);
-                  }
-                  if (state is BlogCreated || state is BlogUpdated) {
-                    Navigator.of(context).pop();
-                  }
-                },
-                child: _buildMarkdownEditor(),
-              ),
-              const SizedBox(height: 16),
-              _buildSaveButton(),
-            ],
+          child: BlocListener<BlogBloc, BlogState>(
+            listener: (context, state) {
+              if (state is BlogImageUpdated) {
+                _markdownController.text +=
+                    ' ![Illustration](${state.imageUrl})';
+                _blogBloc.add(UpdateMarkdownEvent(_markdownController.text));
+              } else if (state is BlogError) {
+                _showErrorSnackbar(context, state.error);
+              }
+              if (state is BlogCreated || state is BlogUpdated) {
+                Navigator.of(context).pop();
+              }
+              if (state is BlogFetched) {
+                final blog = state.blog;
+                _titleController.text = blog['title'];
+                _tagsController.text = blog['tags'];
+                _markdownController.text = blog['markdown'];
+                initialMarkdown = blog['markdown'];
+              }
+            },
+            child: BlocBuilder<BlogBloc, BlogState>(
+              builder: (context, state) {
+                if (state is BlogLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                return Column(
+                  children: [
+                    _buildTitleField(),
+                    const SizedBox(height: 16),
+                    _buildTagsField(),
+                    const SizedBox(height: 16),
+                    _buildAddImageButton(),
+                    const SizedBox(height: 16),
+                    _buildMarkdownEditor(),
+                    const SizedBox(height: 16),
+                    _buildSaveButton(),
+                  ],
+                );
+              },
+            ),
           ),
         ),
       ),
@@ -100,18 +115,29 @@ class _BlogCreateEditState extends State<BlogCreateEdit> {
     );
   }
 
+  Widget _buildTagsField() {
+    return TextField(
+      controller: _tagsController,
+      decoration: const InputDecoration(
+        labelText: 'New Tag',
+        border: OutlineInputBorder(),
+      ),
+    );
+  }
+
   Widget _buildSaveButton() {
     return ElevatedButton(
         onPressed: () {
           if (widget.blogData?.blogId == null) {
-            _blogBloc.add(CreateBlogEvent(
-                _markdownController.text, _titleController.text));
+            _blogBloc.add(CreateBlogEvent(_markdownController.text,
+                _titleController.text, _tagsController.text));
           } else {
             _blogBloc.add(UpdateBlogEvent(
                 widget.blogData!.blogId!,
-                widget.blogData!.initialContent!,
+                initialMarkdown ?? '',
                 _markdownController.text,
-                _titleController.text));
+                _titleController.text,
+                _tagsController.text));
           }
         },
         style: ElevatedButton.styleFrom(

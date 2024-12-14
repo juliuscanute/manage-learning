@@ -66,8 +66,6 @@ class BlogsWidget extends StatelessWidget {
                                 Navigator.of(context).pushNamed('/blog-updates',
                                     arguments: BlogData(
                                       blogId: blog['id'],
-                                      initialTitle: title,
-                                      initialContent: markdown,
                                     ));
                               },
                             ),

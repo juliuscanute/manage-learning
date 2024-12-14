@@ -13,7 +13,8 @@ class RemoveImageEvent extends BlogEvent {}
 class CreateBlogEvent extends BlogEvent {
   final String markdown;
   final String title;
-  CreateBlogEvent(this.markdown, this.title);
+  final String tags;
+  CreateBlogEvent(this.markdown, this.title, this.tags);
 }
 
 class UpdateBlogEvent extends BlogEvent {
@@ -21,7 +22,9 @@ class UpdateBlogEvent extends BlogEvent {
   final String initialMarkdown;
   final String markdown;
   final String title;
-  UpdateBlogEvent(this.blogId, this.initialMarkdown, this.markdown, this.title);
+  final String tags;
+  UpdateBlogEvent(
+      this.blogId, this.initialMarkdown, this.markdown, this.title, this.tags);
 }
 
 // State definition
@@ -45,7 +48,17 @@ class BlogImageUpdated extends BlogState {
   BlogImageUpdated(this.imageUrl);
 }
 
+class BlogFetched extends BlogState {
+  final Map<String, dynamic> blog;
+  BlogFetched(this.blog);
+}
+
 class BlogError extends BlogState {
   final String error;
   BlogError(this.error);
+}
+
+class FetchBlogByIdEvent extends BlogEvent {
+  final String blogId;
+  FetchBlogByIdEvent(this.blogId);
 }
