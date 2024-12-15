@@ -23,8 +23,10 @@ class UpdateBlogEvent extends BlogEvent {
   final String markdown;
   final String title;
   final String tags;
-  UpdateBlogEvent(
-      this.blogId, this.initialMarkdown, this.markdown, this.title, this.tags);
+  final String parentPath;
+  final String folderId;
+  UpdateBlogEvent(this.blogId, this.initialMarkdown, this.markdown, this.title,
+      this.tags, this.parentPath, this.folderId);
 }
 
 // State definition

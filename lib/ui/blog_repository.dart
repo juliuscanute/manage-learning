@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
@@ -6,19 +8,32 @@ class BlogRepository {
   final FirebaseStorage _storage = FirebaseStorage.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  final StreamController<void> _changeController =
+      StreamController<void>.broadcast();
+
+  Stream<void> get changeStream => _changeController.stream;
+
   BlogRepository() {
     _firestore.settings = const Settings(persistenceEnabled: true);
   }
 
-  Stream<List<Map<String, dynamic>>> getFoldersStream() {
-    return _firestore.collection('blogFolders').snapshots().map((snapshot) {
+  void notifyListeners() {
+    _changeController.add(null);
+  }
+
+  Future<List<Map<String, dynamic>>> getFolders() async {
+    try {
+      final snapshot = await _firestore.collection('blogFolders').get();
       final items = snapshot.docs.map((doc) {
         final data = doc.data();
         return {'id': doc.id, 'name': data['name'] ?? ''};
       }).toList();
       items.sort((a, b) => a['name'].compareTo(b['name']));
       return items;
-    });
+    } catch (e) {
+      print('Error getting folders: $e');
+      return [];
+    }
   }
 
   // Method to read subfolders of a folder from Firestore
@@ -90,20 +105,27 @@ class BlogRepository {
     await _storage.refFromURL(imageUrl).delete();
   }
 
-  Future<void> deleteBlogPost(String id) async {
-    final DocumentSnapshot docSnapshot =
-        await _firestore.collection('blogs').doc(id).get();
-    if (docSnapshot.exists) {
-      final String markdown = docSnapshot['markdown'];
-      final RegExp imageUrlRegExp = RegExp(r'!\[.*?\]\((.*?)\)');
-      final Iterable<RegExpMatch> initialMatches =
-          imageUrlRegExp.allMatches(markdown);
-      final matches = initialMatches.map((match) => match.group(1)!).toList();
-      for (final match in matches) {
-        final String imageUrl = Uri.decodeFull(match);
-        await deleteImage(imageUrl);
+  Future<void> deleteBlogPost(
+      String id, String parentPath, String folderId) async {
+    try {
+      final DocumentSnapshot docSnapshot =
+          await _firestore.collection('blogs').doc(id).get();
+      if (docSnapshot.exists) {
+        final String markdown = docSnapshot['markdown'];
+        final RegExp imageUrlRegExp = RegExp(r'!\[.*?\]\((.*?)\)');
+        final Iterable<RegExpMatch> initialMatches =
+            imageUrlRegExp.allMatches(markdown);
+        final matches = initialMatches.map((match) => match.group(1)!).toList();
+        for (final match in matches) {
+          final String imageUrl = Uri.decodeFull(match);
+          await deleteImage(imageUrl);
+        }
+        await _firestore.collection('blogs').doc(id).delete();
+        await deleteFolderIfEmpty(parentPath, folderId);
+        notifyListeners();
       }
-      await _firestore.collection('blogs').doc(id).delete();
+    } catch (e) {
+      print('Error deleting blog post: $e');
     }
   }
 
@@ -115,6 +137,7 @@ class BlogRepository {
       'tags': tags,
       'created_at': FieldValue.serverTimestamp(),
     });
+    notifyListeners();
     return docRef.id;
   }
 
@@ -133,8 +156,8 @@ class BlogRepository {
     }
   }
 
-  Future<void> updateBlogPost(
-      String id, String title, String markdown, String tags) async {
+  Future<void> updateBlogPost(String id, String title, String markdown,
+      String tags, String parentPath, String folderId) async {
     final currentBlogEntry = await getBlogPostById(id);
     if (currentBlogEntry != null) {
       bool shouldUpdate = false;
@@ -142,7 +165,7 @@ class BlogRepository {
 
       if (currentBlogEntry['title'] != title) {
         updates['title'] = title;
-        // updateFolderTitle(parentPath, folderId, title)
+        updateFolderTitle(parentPath, folderId, title);
         shouldUpdate = true;
       }
       if (currentBlogEntry['markdown'] != markdown) {
@@ -153,9 +176,9 @@ class BlogRepository {
         updates['tags'] = tags;
         final tagsList =
             tags.split('/').where((tag) => tag.isNotEmpty).toList();
-        createTagPath(tagsList, id, title);
-        // deleteFolderIfEmpty(parentPath, folderId)
-        // updateFolderTags(parentPath, folderId, tags)
+        await createTagPath(tagsList, id, title);
+        await updateFolderTags(parentPath, folderId, tagsList);
+        await deleteFolderIfEmpty(parentPath, folderId);
         shouldUpdate = true;
       }
 
@@ -163,6 +186,8 @@ class BlogRepository {
         updates['updated_at'] = FieldValue.serverTimestamp();
         await _firestore.collection('blogs').doc(id).update(updates);
       }
+
+      notifyListeners();
     }
   }
 

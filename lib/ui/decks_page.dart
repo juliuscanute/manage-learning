@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:manage_learning/ui/blogs/blog_category_screen.dart';
 import 'package:manage_learning/ui/blogs_create.dart';
 import 'package:manage_learning/ui/blogs_widget.dart';
 import 'package:manage_learning/ui/category_screen_new.dart';
@@ -70,7 +71,7 @@ class _DecksPageWidgetState extends State<DecksPage>
         controller: _tabController,
         children: const [
           CategoryScreenNew(),
-          BlogsWidget(),
+          BlogCategoryScreen(),
         ],
       ),
       floatingActionButton: FloatingActionButton(

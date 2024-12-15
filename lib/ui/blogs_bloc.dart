@@ -144,6 +144,8 @@ class BlogBloc extends Bloc<BlogEvent, BlogState> {
           upatedTitle,
           updatedMarkdown,
           upatedTags,
+          event.parentPath,
+          event.folderId,
         );
         emit(BlogUpdated());
       } catch (e) {

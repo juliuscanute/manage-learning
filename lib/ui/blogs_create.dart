@@ -4,6 +4,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:manage_learning/ui/blog_events.dart';
 import 'package:manage_learning/ui/blog_repository.dart';
 import 'package:manage_learning/ui/blogs_bloc.dart';
+import 'package:provider/provider.dart';
 
 class BlogCreateEdit extends StatefulWidget {
   final BlogData? blogData;
@@ -16,8 +17,10 @@ class BlogCreateEdit extends StatefulWidget {
 
 class BlogData {
   final String? blogId;
+  final String? parentPath;
+  final String? folderId;
 
-  BlogData({this.blogId});
+  BlogData({this.blogId, this.parentPath, this.folderId});
 }
 
 class _BlogCreateEditState extends State<BlogCreateEdit> {
@@ -30,8 +33,9 @@ class _BlogCreateEditState extends State<BlogCreateEdit> {
   @override
   void initState() {
     super.initState();
+    final blogRepository = Provider.of<BlogRepository>(context, listen: false);
     _blogBloc =
-        BlogBloc(repository: BlogRepository(), imageService: ImageService());
+        BlogBloc(repository: blogRepository, imageService: ImageService());
     final blogData = widget.blogData;
     if (widget.blogData != null) {
       if (blogData?.blogId != null) {
@@ -80,20 +84,23 @@ class _BlogCreateEditState extends State<BlogCreateEdit> {
             },
             child: BlocBuilder<BlogBloc, BlogState>(
               builder: (context, state) {
-                if (state is BlogLoading) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                return Column(
+                return Stack(
                   children: [
-                    _buildTitleField(),
-                    const SizedBox(height: 16),
-                    _buildTagsField(),
-                    const SizedBox(height: 16),
-                    _buildAddImageButton(),
-                    const SizedBox(height: 16),
-                    _buildMarkdownEditor(),
-                    const SizedBox(height: 16),
-                    _buildSaveButton(),
+                    Column(
+                      children: [
+                        _buildTitleField(),
+                        const SizedBox(height: 16),
+                        _buildTagsField(),
+                        const SizedBox(height: 16),
+                        _buildAddImageButton(),
+                        const SizedBox(height: 16),
+                        _buildMarkdownEditor(),
+                        const SizedBox(height: 16),
+                        _buildSaveButton(),
+                      ],
+                    ),
+                    if (state is BlogLoading)
+                      const Center(child: CircularProgressIndicator()),
                   ],
                 );
               },
@@ -137,7 +144,9 @@ class _BlogCreateEditState extends State<BlogCreateEdit> {
                 initialMarkdown ?? '',
                 _markdownController.text,
                 _titleController.text,
-                _tagsController.text));
+                _tagsController.text,
+                widget.blogData!.parentPath!,
+                widget.blogData!.folderId!));
           }
         },
         style: ElevatedButton.styleFrom(

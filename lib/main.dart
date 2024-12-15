@@ -3,6 +3,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:manage_learning/data/firebase_service.dart';
+import 'package:manage_learning/ui/blog_repository.dart';
+import 'package:manage_learning/ui/blogs/blog_subfolder_screen.dart';
 import 'package:manage_learning/ui/blogs_create.dart';
 import 'package:manage_learning/ui/category_screen_subfolder_new.dart';
 import 'package:manage_learning/ui/decks_page.dart';
@@ -62,7 +64,12 @@ class MyApp extends StatelessWidget {
       providers: [
         Provider<FirebaseService>(
           create: (_) => FirebaseService(),
-        )
+          lazy: false,
+        ),
+        Provider<BlogRepository>(
+          create: (_) => BlogRepository(),
+          lazy: false,
+        ),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -111,6 +118,16 @@ class MyApp extends StatelessWidget {
                 } else if (settings.name == '/blog-updates') {
                   final data = settings.arguments as BlogData;
                   return BlogCreateEdit(blogData: data);
+                } else if (settings.name == '/blog-category-screen-new') {
+                  final args = settings.arguments as Map<String, dynamic>;
+                  final parentPath = args['parentPath'] as String;
+                  final subFolders =
+                      args['subFolders'] as List<Map<String, dynamic>>;
+                  final parentId = args['folderId'] as String;
+                  return BlogSubfolderScreen(
+                      parentFolderName: parentId,
+                      parentPath: parentPath,
+                      subFolders: subFolders);
                 }
                 return Container();
               },
