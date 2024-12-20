@@ -21,12 +21,26 @@ class BlogRepository {
     _changeController.add(null);
   }
 
+  Future<void> addIsPublicFlag(String collectionPath, bool isPublic) async {
+    try {
+      await _firestore.doc(collectionPath).update({
+        'isPublic': isPublic,
+      });
+    } catch (e) {
+      print("Error adding isPublic flag: $e");
+    }
+  }
+
   Future<List<Map<String, dynamic>>> getFolders() async {
     try {
       final snapshot = await _firestore.collection('blogFolders').get();
       final items = snapshot.docs.map((doc) {
         final data = doc.data();
-        return {'id': doc.id, 'name': data['name'] ?? ''};
+        return {
+          'id': doc.id,
+          'name': data['name'] ?? '',
+          'isPublic': data['isPublic'] ?? true
+        };
       }).toList();
       items.sort((a, b) => a['name'].compareTo(b['name']));
       return items;
@@ -52,6 +66,7 @@ class BlogRepository {
             'id': subFolder.id,
             'name': folderData['name'] ?? '',
             'hasSubfolders': true,
+            'isPublic': folderData['isPublic'] ?? true,
           });
         } else {
           subFolders.add({

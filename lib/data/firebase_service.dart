@@ -52,13 +52,29 @@ class FirebaseService {
     return _firestore.collection('folder').snapshots().map((snapshot) {
       final items = snapshot.docs.map((doc) {
         final data = doc.data();
-        return {'id': doc.id, 'name': data['name'] ?? ''};
+        return {
+          'id': doc.id,
+          'name': data['name'] ?? '',
+          'isPublic': data['isPublic'] ?? true
+        };
       }).toList();
       items.sort((a, b) => a['name'].compareTo(b['name']));
       logAnalyticsEvent(
           "getFoldersStream", {"collection": "folder", "size": items.length});
       return items;
     });
+  }
+
+  Future<void> addIsPublicFlag(String collectionPath, bool isPublic) async {
+    try {
+      await _firestore.doc(collectionPath).update({
+        'isPublic': isPublic,
+      });
+      logAnalyticsEvent("addIsPublicFlag",
+          {"collectionPath": collectionPath, "isPublic": "$isPublic"});
+    } catch (e) {
+      print("Error adding isPublic flag: $e");
+    }
   }
 
 // Method to read subfolders of a folder from Firestore
@@ -77,6 +93,7 @@ class FirebaseService {
             'id': subFolder.id,
             'name': folderData['name'] ?? '',
             'hasSubfolders': true,
+            'isPublic': folderData['isPublic'] ?? true,
           });
         } else {
           subFolders.add({

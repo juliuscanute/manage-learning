@@ -9,12 +9,14 @@ class CategoryCardNew extends StatefulWidget {
   final List<Map<String, dynamic>> subFolders;
   final String folderId;
   final String category;
+  final bool isPublic;
 
   CategoryCardNew({
     required this.parentPath,
     required this.subFolders,
     required this.folderId,
     required this.category,
+    required this.isPublic,
   });
 
   @override
@@ -23,11 +25,13 @@ class CategoryCardNew extends StatefulWidget {
 
 class _CategoryCardNewState extends State<CategoryCardNew> {
   late FirebaseService _firebaseService;
+  bool isPublic = true;
 
   @override
   void initState() {
     super.initState();
     _firebaseService = Provider.of<FirebaseService>(context, listen: false);
+    isPublic = widget.isPublic;
   }
 
   Future<void> _fetchSubFolders() async {
@@ -50,11 +54,25 @@ class _CategoryCardNewState extends State<CategoryCardNew> {
       margin: const EdgeInsets.all(8.0),
       child: ListTile(
         title: Text(widget.category, style: const TextStyle(fontSize: 18.0)),
-        trailing: IconButton(
-          icon: const Icon(Icons.copy),
-          onPressed: () {
-            _duplicateDeck(context);
-          },
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.copy),
+              onPressed: () {
+                _duplicateDeck(context);
+              },
+            ),
+            Switch(
+              value: isPublic,
+              onChanged: (value) {
+                setState(() {
+                  isPublic = value;
+                });
+                _firebaseService.addIsPublicFlag(widget.parentPath, isPublic);
+              },
+            ),
+          ],
         ),
         onTap: () async {
           _fetchSubFolders();

@@ -92,7 +92,7 @@ class _SubfolderScreenState extends State<SubfolderScreen> {
       List<Map<String, dynamic>> subFolders, String parentPath) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        int crossAxisCount = constraints.maxWidth > 600 ? 4 : 1;
+        int crossAxisCount = constraints.maxWidth > 600 ? 2 : 1;
         double width =
             (constraints.maxWidth - (crossAxisCount - 1) * 10) / crossAxisCount;
 
@@ -110,6 +110,7 @@ class _SubfolderScreenState extends State<SubfolderScreen> {
                     parentPath: '$parentPath/${folder['id']}',
                     subFolders: folder['subFolders'] ?? [],
                     folderId: folder['id'],
+                    isPublic: folder['isPublic'] ?? true,
                   ),
                 );
               } else {

@@ -40,7 +40,7 @@ class _CategoryScreenNewState extends State<CategoryScreenNew> {
             builder: (context, constraints) {
               // Calculate the number of columns based on screen width
               int crossAxisCount = constraints.maxWidth > 600
-                  ? 4
+                  ? 2
                   : 1; // Example breakpoint at 600px
 
               // Calculate the width of each child based on the number of columns
@@ -62,6 +62,7 @@ class _CategoryScreenNewState extends State<CategoryScreenNew> {
                           parentPath: 'folder/${folder['id']}',
                           subFolders: folder['subFolders'] ?? [],
                           folderId: folder['id'],
+                          isPublic: folder['isPublic'] ?? true,
                         ),
                       );
                     } else {
