@@ -170,25 +170,17 @@ class DeckBloc extends Bloc<DeckEvent, DeckState> {
           .split('/')
           .where((tag) => tag.isNotEmpty)
           .toList();
+      await _uploadImage(state.mindmapImageController, 'mindmap_images');
+      final mapUrl = state.mindmapImageController['imageUrl'];
       var deckId = await _firebaseService.createDeck(
           state.deckTitleController.text,
           tags,
           state.isEvaluatorStrict,
-          state.isPublic);
-
-      if (state.videoUrlController.text.isNotEmpty) {
-        await _firebaseService.updateDeckWithVideoUrl(
-            deckId, state.videoUrlController.text);
-      }
-
-      print("Processing mindmap");
-      await _uploadImage(state.mindmapImageController, 'mindmap_images');
-      final mapUrl = state.mindmapImageController['imageUrl'];
-      if (mapUrl.isNotEmpty) {
-        await _firebaseService.updateDeckWithMapUrl(deckId, mapUrl);
-      }
-
-      print('Processing card');
+          state.isPublic,
+          state.videoUrlController.text.isEmpty
+              ? null
+              : state.videoUrlController.text,
+          mapUrl.isEmpty ? null : mapUrl);
 
       for (var i = 0; i < state.cardControllers.length; i++) {
         var controllers = state.cardControllers[i];

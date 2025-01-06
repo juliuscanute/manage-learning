@@ -169,8 +169,8 @@ class FirebaseService {
     }
   }
 
-  Future<String> createDeck(
-      String title, List<String> tags, bool exactMatch, bool isPublic) async {
+  Future<String> createDeck(String title, List<String> tags, bool exactMatch,
+      bool isPublic, String? videoUrl, String? mapUrl) async {
     try {
       // Create the deck in the final collection
 
@@ -180,9 +180,12 @@ class FirebaseService {
         'tags': tags,
         'exactMatch': exactMatch,
         'isPublic': isPublic, // Add isPublic here
+        'videoUrl': videoUrl,
+        'mapUrl': mapUrl,
       });
       final deckId = newDeckRef.id;
-      await _createTagPath(tags, deckId, title, exactMatch, isPublic);
+      await _createTagPath(tags, deckId, title, exactMatch, isPublic, videoUrl,
+          mapUrl); // Create the tag path
       notifyListeners();
       logAnalyticsEvent("createDeck", {
         "collection": "decks",
@@ -191,6 +194,8 @@ class FirebaseService {
         "tags": tags,
         "exactMatch": exactMatch,
         "isPublic": isPublic,
+        "videoUrl": videoUrl,
+        "mapUrl": mapUrl,
       });
       return deckId;
     } catch (e) {
@@ -200,7 +205,7 @@ class FirebaseService {
   }
 
   Future<void> _createTagPath(List<String> tags, String deckId, String title,
-      bool exactMatch, bool isPublic) async {
+      bool exactMatch, bool isPublic, String? videoUrl, String? mapUrl) async {
     // Start with the root collection
     CollectionReference currentRef = _firestore.collection('folder');
 
@@ -243,6 +248,8 @@ class FirebaseService {
       'isPublic': isPublic,
       'type': 'card',
       'hasSubfolders': false,
+      'videoUrl': videoUrl,
+      'mapUrl': mapUrl,
     });
 
     logAnalyticsEvent("_createTagPath", {
@@ -322,8 +329,14 @@ class FirebaseService {
 
       await batch.commit();
 
-      await _createTagPath(tags, newDeckRef.id, newDeck['title'] ?? '',
-          newDeck['exactMatch'] ?? false, newDeck['isPublic'] ?? false);
+      await _createTagPath(
+          tags,
+          newDeckRef.id,
+          newDeck['title'] ?? '',
+          newDeck['exactMatch'] ?? false,
+          newDeck['isPublic'] ?? false,
+          newDeck['videoUrl'],
+          newDeck['mapUrl']);
       logAnalyticsEvent("duplicateDeck", {
         "collection": "decks",
         "deckId": newDeckRef.id,
@@ -410,7 +423,8 @@ class FirebaseService {
     }
     if (_originalCardsState['tags'] != tags) {
       updates['tags'] = tags;
-      await _createTagPath(tags, deckId, title, exactMatch, isPublic);
+      await _createTagPath(tags, deckId, title, exactMatch, isPublic, videoUrl,
+          mapUrl); // Create the tag path
       deleteFolderIfEmpty(deck['parentPath'], deck['folderId']);
       updateFolderTags(deck['parentPath'], deck['folderId'], tags);
     }
@@ -518,36 +532,9 @@ class FirebaseService {
     logAnalyticsEvent("updateDeck", {
       "collection": "decks",
       "deckId": deckId,
-      "title": title,
-      "tags": tags,
-      "exactMatch": exactMatch,
-      "isPublic": isPublic,
-      "size": cards.length,
     });
     // Commit the batch operation
     await batch.commit();
-  }
-
-  Future<void> updateDeckWithVideoUrl(String deckId, String videoUrl) async {
-    try {
-      await _firestore.collection('decks').doc(deckId).update({
-        'videoUrl': videoUrl,
-      });
-    } catch (e) {
-      print("Error updating deck with Video URL: $e");
-      // Handle any errors appropriately in your app context
-    }
-  }
-
-  Future<void> updateDeckWithMapUrl(String deckId, String mapUrl) async {
-    try {
-      await _firestore.collection('decks').doc(deckId).update({
-        'mapUrl': mapUrl,
-      });
-    } catch (e) {
-      print("Error updating deck with Map URL: $e");
-      // Handle any errors appropriately in your app context
-    }
   }
 
   Future<void> deleteCard(String deckId, String cardId) async {
