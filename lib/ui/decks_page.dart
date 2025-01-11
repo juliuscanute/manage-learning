@@ -92,7 +92,7 @@ class _DecksPageWidgetState extends State<DecksPage>
         children: [
           SpeedDialChild(
             child: const Icon(Icons.note_add),
-            label: 'Add Card',
+            label: 'Add Deck',
             onTap: _showAddCards,
           ),
           SpeedDialChild(
