@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:manage_learning/ui/blogs/blog_category_screen.dart';
 import 'package:manage_learning/ui/blogs_create.dart';
 import 'package:manage_learning/ui/blogs_widget.dart';
@@ -30,6 +31,16 @@ class _DecksPageWidgetState extends State<DecksPage>
 
   void _showAddCards() {
     Navigator.of(context).pushNamed('/addcards');
+    setState(() {
+      _tabController.index = 0; // Switch to Decks tab
+    });
+  }
+
+  void _showAddBlog() {
+    setState(() {
+      _tabController.index = 1; // Switch to Blogs tab
+    });
+    Navigator.of(context).pushNamed('/blog-updates', arguments: BlogData());
   }
 
   @override
@@ -74,10 +85,22 @@ class _DecksPageWidgetState extends State<DecksPage>
           BlogCategoryScreen(),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showAddCards,
-        tooltip: 'Add Deck',
-        child: const Icon(Icons.add),
+      floatingActionButton: SpeedDial(
+        icon: Icons.add,
+        activeIcon: Icons.close,
+        renderOverlay: false,
+        children: [
+          SpeedDialChild(
+            child: const Icon(Icons.note_add),
+            label: 'Add Card',
+            onTap: _showAddCards,
+          ),
+          SpeedDialChild(
+            child: const Icon(Icons.article),
+            label: 'Add Blog',
+            onTap: _showAddBlog,
+          ),
+        ],
       ),
     );
   }
