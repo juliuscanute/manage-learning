@@ -10,13 +10,12 @@ class AccountRepository {
   AccountRepository({required String apiBaseUrl}) : _apiBaseUrl = apiBaseUrl;
 
   Future<void> createTeacherAccount(String email, String password) async {
-    //I want to get current user credentials
+    // Get current user credentials
     final currentUser = await _auth.currentUser;
     final idToken = await currentUser?.getIdToken();
-    final uid = currentUser?.uid;
 
-    if (uid != null) {
-      await http.post(
+    if (idToken != null) {
+      final response = await http.post(
         Uri.parse('$_apiBaseUrl/claims'),
         headers: {
           'Authorization': 'Bearer $idToken',
@@ -29,13 +28,23 @@ class AccountRepository {
         }),
       );
 
-      await _firestore.collection('users').doc(uid).set({
-        'email': email,
-        'uid': uid,
-        'createdAt': FieldValue.serverTimestamp(),
-        'isTeacher': true,
-        'isActive': true,
-      });
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        final uid = responseData['uid'];
+
+        await _firestore.collection('users').doc(uid).set({
+          'email': email,
+          'uid': uid,
+          'createdAt': FieldValue.serverTimestamp(),
+          'isTeacher': true,
+          'isActive': true,
+        });
+      } else {
+        throw Exception(
+            'Failed to create user and set claims: ${response.body}');
+      }
+    } else {
+      throw Exception('Failed to get ID token for current user.');
     }
   }
 
