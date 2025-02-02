@@ -3,6 +3,9 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:manage_learning/data/firebase_service.dart';
+import 'package:manage_learning/ui/accounts/account_repository.dart';
+import 'package:manage_learning/ui/accounts/create_account.dart';
+import 'package:manage_learning/ui/accounts/view_accounts.dart';
 import 'package:manage_learning/ui/blog_repository.dart';
 import 'package:manage_learning/ui/blogs/blog_subfolder_screen.dart';
 import 'package:manage_learning/ui/blogs_create.dart';
@@ -70,6 +73,11 @@ class MyApp extends StatelessWidget {
           create: (_) => BlogRepository(),
           lazy: false,
         ),
+        Provider<AccountRepository>(
+          create: (_) => AccountRepository(
+            apiBaseUrl: dotenv.env['API_BASE_URL']!,
+          ),
+        ),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -92,6 +100,10 @@ class MyApp extends StatelessWidget {
                   return const LoginScreen();
                 } else if (settings.name == '/decks') {
                   return const DecksPage();
+                } else if (settings.name == '/accounts') {
+                  return ViewAccounts();
+                } else if (settings.name == '/create-account') {
+                  return CreateAccount();
                 } else if (settings.name == '/addcards') {
                   return const CardsPageView(
                     deck: {},

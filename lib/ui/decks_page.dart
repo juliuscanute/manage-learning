@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:manage_learning/ui/blogs/blog_category_screen.dart';
 import 'package:manage_learning/ui/blogs_create.dart';
-import 'package:manage_learning/ui/blogs_widget.dart';
 import 'package:manage_learning/ui/category_screen_new.dart';
 
 class DecksPage extends StatefulWidget {
@@ -67,6 +66,12 @@ class _DecksPageWidgetState extends State<DecksPage>
             onPressed: () {
               Navigator.of(context)
                   .pushNamed('/blog-updates', arguments: BlogData());
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.account_circle),
+            onPressed: () {
+              Navigator.of(context).pushNamed('/accounts');
             },
           ),
           IconButton(
