@@ -17,30 +17,27 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
-void main() async {
-  await initializeFirebase();
-  runApp(const MyApp());
-}
-
 Future<Map<String, dynamic>> loadConfig() async {
   try {
     final response = await http.get(Uri.parse('config.json'));
     if (response.statusCode == 200) {
       return json.decode(response.body) as Map<String, dynamic>;
     } else {
-      // Handle the case when the file is not found or other server errors
       print('Failed to load config.json: ${response.statusCode}');
     }
   } catch (e) {
-    // Handle any other types of errors (e.g., parsing errors)
     print('An error occurred while loading config.json: $e');
   }
   return {};
 }
 
-Future<bool> initializeFirebase() async {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Load .env and fallback config values
   await dotenv.load(fileName: ".env", isOptional: true);
   final config = await loadConfig();
+
   await Firebase.initializeApp(
     options: FirebaseOptions(
       apiKey: dotenv.env['FIREBASE_API_KEY'] ?? config['apiKey'],
@@ -55,11 +52,13 @@ Future<bool> initializeFirebase() async {
           dotenv.env['FIREBASE_MEASUREMENT_ID'] ?? config['measurementId'],
     ),
   );
-  return true;
+
+  runApp(MyApp(config: config));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final Map<String, dynamic> config;
+  const MyApp({Key? key, required this.config}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -75,7 +74,7 @@ class MyApp extends StatelessWidget {
         ),
         Provider<AccountRepository>(
           create: (_) => AccountRepository(
-            apiBaseUrl: dotenv.env['API_BASE_URL']!,
+            apiBaseUrl: dotenv.env['API_BASE_URL'] ?? config['apiBaseUrl'],
           ),
         ),
       ],
@@ -121,9 +120,10 @@ class MyApp extends StatelessWidget {
                       args['subFolders'] as List<Map<String, dynamic>>;
                   final parentId = args['folderId'] as String;
                   return SubfolderScreen(
-                      parentFolderName: parentId,
-                      parentPath: parentPath,
-                      subFolders: subFolders);
+                    parentFolderName: parentId,
+                    parentPath: parentPath,
+                    subFolders: subFolders,
+                  );
                 } else if (settings.name == '/smart-deck') {
                   return const CardsPageView(
                       deck: {}, operation: DeckOperation.load);
@@ -137,9 +137,10 @@ class MyApp extends StatelessWidget {
                       args['subFolders'] as List<Map<String, dynamic>>;
                   final parentId = args['folderId'] as String;
                   return BlogSubfolderScreen(
-                      parentFolderName: parentId,
-                      parentPath: parentPath,
-                      subFolders: subFolders);
+                    parentFolderName: parentId,
+                    parentPath: parentPath,
+                    subFolders: subFolders,
+                  );
                 }
                 return Container();
               },
