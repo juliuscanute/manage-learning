@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:manage_learning/ui/accounts/account_repository.dart';
 import 'package:manage_learning/ui/accounts/create_account_state.dart';
@@ -31,9 +32,15 @@ class _CreateAccountState extends State<CreateAccount> {
       child: BlocConsumer<CreateAccountCubit, CreateAccountState>(
         listener: (context, state) {
           if (state is CreateAccountSuccess) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content: Text(
-                    'Account created for ${state.email} with password ${state.password}')));
+            final snackBar = SnackBar(
+              content: Text(
+                  'Account created for ${state.email} with password ${state.password}'),
+              duration: const Duration(seconds: 2),
+            );
+            ScaffoldMessenger.of(context)
+                .showSnackBar(snackBar)
+                .closed
+                .then((_) => Navigator.of(context).pop(true));
           } else if (state is CreateAccountError) {
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                 content: Text('Failed to create account: ${state.message}')));
@@ -136,7 +143,26 @@ class _CreateAccountState extends State<CreateAccount> {
               ),
             ),
             const SizedBox(height: 16),
-            Text('Generated Password: $_generatedPassword'),
+            Row(
+              children: [
+                Expanded(
+                  child: SelectableText(
+                    'Generated Password: $_generatedPassword',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.copy),
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: _generatedPassword));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content: Text('Password copied to clipboard')),
+                    );
+                  },
+                ),
+              ],
+            ),
             const SizedBox(height: 16),
             if (state is CreateAccountLoading)
               const CircularProgressIndicator()

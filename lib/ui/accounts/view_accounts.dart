@@ -67,8 +67,12 @@ class _ViewAccountsState extends State<ViewAccounts> {
           ),
         ),
         floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            Navigator.of(context).pushNamed('/create-account');
+          onPressed: () async {
+            final result =
+                await Navigator.of(context).pushNamed('/create-account');
+            if (result == true) {
+              _createAccountCubit.loadUsers();
+            }
           },
           child: const Icon(Icons.add),
         ),
